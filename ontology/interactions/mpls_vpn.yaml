@@ -1,0 +1,18 @@
+ontology:
+  id: interaction-mpls-vpn
+  title: MPLS and VPN Interaction
+  version: 1.0.0
+  description: MPLS service overlays depend on transport LSPs.
+node_labels: {}
+properties: {}
+relationship_types:
+  MPLS_SERVICE_DEPENDS_ON_LSP: {from: [MPLSService, MPLSL3VPN, MPLSL2VPN, VPNService], to: [LSP, MPLSLSP, LabelSwitchedPath], description: MPLS or VPN service requires label-switched transport.}
+constraints: []
+dependency_rules:
+  - {id: mpls-vpn-lsp, source: MPLSL3VPN, relationship: MPLS_SERVICE_DEPENDS_ON_LSP, target: [MPLSLSP], rationale: VPN service needs usable transport LSP.}
+risk_rules:
+  - {id: vpn-lsp-down, applies_to: MPLSL3VPN, when: required transport LSP is down, severity: critical, response: Restore transport labels before altering VPN policy.}
+validation_queries:
+  - {id: vpn-without-lsp, description: Find L3VPNs without LSP, cypher: "MATCH (v:MPLSL3VPN) WHERE NOT (v)-[:MPLS_SERVICE_DEPENDS_ON_LSP]->() RETURN v.id"}
+example_scenarios:
+  - {id: payment-mpls-vpn, summary: Payment VPN uses a remote-PE LSP.}

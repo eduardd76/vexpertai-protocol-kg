@@ -1,0 +1,18 @@
+ontology:
+  id: interaction-bgp-mpls
+  title: BGP and MPLS Interaction
+  version: 1.0.0
+  description: VPN routes require a usable MPLS label and transport path.
+node_labels: {}
+properties: {}
+relationship_types:
+  VPN_ROUTE_DEPENDS_ON_MPLS_LABEL: {from: [BGPRoute, VPNRoute, VPNv4Route, VPNv6Route], to: [MPLSLabel, Label, LabelBinding], description: VPN route forwarding requires MPLS label state.}
+constraints: []
+dependency_rules:
+  - {id: vpn-route-label, source: VPNv4Route, relationship: VPN_ROUTE_DEPENDS_ON_MPLS_LABEL, target: [MPLSLabel], rationale: VPN control-plane route requires data-plane label.}
+risk_rules:
+  - {id: vpn-route-no-label, applies_to: VPNv4Route, when: route is present but label is missing, severity: critical, response: Validate LDP or SR and IGP underlay before changing BGP.}
+validation_queries:
+  - {id: vpn-route-missing-label, description: Find VPN routes with missing labels, cypher: "MATCH (r:VPNv4Route)-[:VPN_ROUTE_DEPENDS_ON_MPLS_LABEL]->(l:MPLSLabel) WHERE l.state <> 'installed' RETURN r.id"}
+example_scenarios:
+  - {id: vpnv4-control-data-divergence, summary: VPNv4 route exists while remote-PE label path is missing.}

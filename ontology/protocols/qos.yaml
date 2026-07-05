@@ -1,6 +1,6 @@
 ontology:
   id: chapter-10-qos
-  title: Quality of Service Design
+  title: QoS Protocol Module
   version: 2.0.0
   description: End-to-end classification, marking, policing, shaping, queuing, congestion evidence, SLA traceability, and bandwidth design necessity.
 
@@ -73,14 +73,15 @@ properties:
     likelihood: {type: string, required: true}
 
 relationship_types:
-  CLASSIFIED_BY: {from: [ApplicationTraffic, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], to: [ClassMap], description: Application traffic is matched by class map.}
+  CLASSIFIED_BY: {from: [Application, ApplicationTraffic, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], to: [ClassMap], description: Application traffic is matched by class map.}
   CLASSIFIES_AS: {from: [ClassMap], to: [QoSClass, TrafficClass], description: Class map assigns matched traffic to policy class.}
   APPLIED_TO: {from: [QoSPolicy, PolicyMap, MarkingPolicy, PolicingPolicy, ShapingPolicy, QueuingPolicy], to: [Interface, WANLink], description: QoS policy is attached to an enforcement interface or link.}
   MARKED_WITH: {from: [QoSClass, TrafficClass], to: [DSCP, CoS], description: Traffic class uses explicit Layer 3 or Layer 2 marking.}
   REQUIRES_MARKING: {from: [ApplicationTraffic, VoiceTraffic, VideoTraffic, CriticalDataTraffic], to: [DSCP, CoS], description: Application traffic requires expected marking.}
   MAY_DROP: {from: [PolicingPolicy], to: [TrafficClass, QoSClass, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], description: Policier can drop excess traffic from class.}
   SMOOTHS: {from: [ShapingPolicy], to: [TrafficClass, QoSClass, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], description: Shaper buffers class traffic to target rate.}
-  MAPS_TO: {from: [SLARequirement, LatencyRequirement, JitterRequirement, LossRequirement], to: [QoSClass, TrafficClass], description: SLA requirement maps to traffic treatment class.}
+  MAPS_TO: {from: [ClassMap, SLARequirement, LatencyRequirement, JitterRequirement, LossRequirement], to: [QoSClass, TrafficClass], description: Classification or SLA requirement maps to traffic class.}
+  IMPACTED_BY: {from: [BusinessService], to: [CongestionEvent], description: Business service is impacted by congestion.}
   REQUIRES_QOS_POLICY: {from: [Interface, WANLink], to: [QoSPolicy], description: Interface or link requires a policy to meet service intent.}
   HAS_CLASS_MAP: {from: [QoSPolicy, PolicyMap], to: [ClassMap], description: Policy contains classification rule.}
   HAS_POLICY_MAP: {from: [QoSPolicy], to: [PolicyMap], description: End-to-end policy is implemented by policy map.}

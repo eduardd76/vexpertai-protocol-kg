@@ -6,6 +6,8 @@ ontology:
 
 node_labels:
   Site: Physical or logical operating location.
+  Region: Geographic or administrative grouping of sites.
+  Role: Functional responsibility assigned to a device.
   Device: Managed network or security system.
   Interface: Physical or logical attachment point.
   Link: Connection between interfaces.
@@ -14,9 +16,13 @@ node_labels:
   VLAN: Layer 2 broadcast segment.
   Prefix: Semantically important IP reachability object.
   Route: Summarized route lineage and state.
+  NextHop: Forwarding recursion target for a route.
   BGPRoute: BGP route with policy, path, and origin lineage.
   VPNRoute: VPN reachability with import/export lineage.
   Protocol: Generic network control or signaling protocol.
+  ProtocolInstance: Concrete protocol process running on a device.
+  ControlPlane: Routing, signaling, and policy state used to compute reachability.
+  DataPlane: Forwarding state used to carry traffic.
   Policy: Generic configuration intent that permits, denies, modifies, or prioritizes behavior.
   RoutingProtocolInstance: Generic protocol process.
   BGPProcess: BGP protocol instance.
@@ -33,10 +39,13 @@ node_labels:
   RedistributionPolicy: Policy controlling routes imported or exported across protocol boundaries.
   SummarizationPolicy: Policy reducing advertised prefix detail at an area or external boundary.
   RedistributionRule: Policy boundary between routing domains.
-  FirewallRule: Security policy statement.
   SecurityPolicy: Generic policy controlling permitted application traffic.
+  Tunnel: Generic logical encapsulation between endpoints.
   Application: Deployed application capability.
+  ApplicationEndpoint: Address and port where an application is reached.
   BusinessService: Business-facing service.
+  SLA: Business-facing availability or performance objective.
+  Owner: Accountable team or role.
   Requirement: Stakeholder need expressed in testable terms.
   Constraint: Boundary an option must not violate.
   Risk: Potential adverse outcome of an option, decision, or migration.
@@ -62,6 +71,7 @@ node_labels:
   DataPlaneDependency: Reified dependency on forwarding, interface, label, tunnel, or queue state.
   ServiceOwner: Team or role accountable for a service, requirement, policy, or risk.
   UserGroup: Users sharing an access location and service need.
+  Source: Generic source endpoint or multicast producer.
   DesignDomain: Bounded network design subject.
   DesignObjective: Measurable desired outcome.
   DesignConstraint: Non-negotiable design boundary.
@@ -100,26 +110,52 @@ relationship_types:
   CONNECTED_TO: {from: [Interface], to: [Interface], description: Interfaces have direct adjacency.}
   HAS_ENDPOINT: {from: [Link, PhysicalLink, VPNService, OverlayTunnel], to: [Interface, CustomerEdge, ProviderEdge, Hub, Spoke, Site], description: Link, VPN, or tunnel terminates on its endpoint.}
   LOCATED_IN: {from: [Device, UserGroup], to: [Site], description: Managed object or user group resides at site.}
+  BELONGS_TO:
+    from: [Site, Prefix, AccessPort, BGPProcess, BGPNeighbor, ClassMap]
+    to: [Region, VRF, VLAN, AutonomousSystem, BGPProcess, QoSPolicy]
+    description: Object belongs to its geographic, forwarding, routing, or policy owner.
+  HAS_ROLE: {from: [Device], to: [Role], description: Device performs a functional role.}
+  RUNS_ON:
+    from: [ProtocolInstance, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess]
+    to: [Device, OSPFRouter, ISISRouter, EIGRPRouter]
+    description: Protocol process executes on a device or protocol-specific router.
   RUNS: {from: [Device], to: [RoutingProtocolInstance, BGPProcess, OSPFProcess, ISISProcess, EIGRPProcess, LabelDistributionProcess], description: Device hosts protocol process.}
   HAS_NEIGHBOR: {from: [BGPProcess], to: [BGPNeighbor], description: BGP process owns neighbor.}
-  ADVERTISES: {from: [BGPProcess, OSPFProcess, TLV, ISISTLV], to: [Prefix, Capability], description: Protocol object advertises reachability or capability.}
+  ADVERTISES: {from: [ProtocolInstance, RoutingProtocolInstance, BGPProcess, OSPFProcess, LSA, TLV, ISISTLV], to: [Prefix, Capability], description: Protocol object advertises reachability or capability.}
   REDISTRIBUTES_TO: {from: [OSPFProcess, EIGRPProcess, RoutingProtocolInstance], to: [BGPProcess, RoutingProtocolInstance], description: Routes cross a protocol boundary.}
   CONTROLLED_BY: {from: [RedistributionRule, RedistributionPolicy], to: [RouteMap], description: Policy controls redistribution.}
   REFERENCES: {from: [RouteMap], to: [PrefixList], description: Route-map evaluates prefix-list.}
   SETS: {from: [RouteMap], to: [Community], description: Policy applies attribute.}
-  SUPPORTS: {from: [Prefix, DesignDecision], to: [BusinessService, DesignObjective], description: Source enables target.}
+  RESOLVES_TO: {from: [Route, BGPRoute, VPNRoute], to: [NextHop], description: Route resolves to forwarding next hop.}
+  USES:
+    from: [Application, DMVPN, MPLSL3VPN, MPLSL2VPN]
+    to: [ApplicationEndpoint, GRE, NHRP, IPsecTunnel, VRF, RouteTarget, VPNRouteTarget, RouteDistinguisher, MPBGP]
+    description: Source consumes an endpoint, protocol component, or segmentation object.
+  SUPPORTS: {from: [Prefix, DesignDecision, Evidence], to: [BusinessService, DesignObjective, Incident], description: Source enables a service or supports a conclusion.}
   DEPENDS_ON:
-    from: [BusinessService, Application, VXLANOverlay, EVPNControlPlane, VTEP, UnderlayRouting, DesignDecision, DesignObjective, VPNService, LabelSwitchedPath, LSP, MPLSService, MPLSL3VPN, Pseudowire, LDPAdjacency, TrafficEngineeringTunnel, ServiceOverlay, MulticastDomain, SegmentRoutingPolicy, MigrationStep, Route, Reachability, OSPFConvergence, SegmentRouting, MPLSOverlay, SegmentRoutingOverlay, ISISUnderlay, HubSpokeReachability, IPsecTunnel, TunnelHealth, BGPNextHop, HotPotatoRouting, ColdPotatoRouting, ServiceReachability, PIMSparseMode, PIMSSM, RPFCheck, MulticastRoute, MulticastApplication, AnycastRP]
-    to: [Application, VRF, VLAN, VNI, Prefix, IPv6Prefix, VXLANOverlay, EVPNControlPlane, VTEP, UnderlayRouting, PhysicalLink, DesignDecision, DesignConstraint, VPNService, WANTransport, QoSPolicy, MPLSDomain, MPLSService, RendezvousPoint, MigrationStep, LSA, OSPFNeighbor, SPFComputation, ISISAdjacency, SegmentRoutingExtension, ISISUnderlay, Reachability, MPLSOverlay, SegmentRoutingOverlay, HubRouter, HubSpokeReachability, DMVPNOverlay, UnderlayTransport, IKEPolicy, IKEState, RoutingState, IGPMetricToExit, PolicyPreference, IGPReachability, BGPRoute, SelectedBGPPath, ServiceReachability, SourceSpecificJoin, UnicastRoutingTable, PIMNeighbor, MulticastGroup, MSDP, SharedState, MulticastApplication, SLARequirement, LSP, LabelSwitchedPath, LabelBinding, RouteDistinguisher, RouteTarget, MPBGPVPNv4, MPBGPVPNv6, TargetedLDP, L2VPNSignaling, RSVPTE, IGPTEExtensions, TransportUnderlay, ServiceOverlay, Pseudowire, LDP]
+    from: [BusinessService, Application, SLA, VXLANOverlay, EVPNControlPlane, VTEP, UnderlayRouting, DesignDecision, DesignObjective, VPNService, LabelSwitchedPath, LSP, MPLSService, MPLSL3VPN, MPLSOverlay, Pseudowire, LDP, LDPAdjacency, BGPNeighbor, BGPRoute, TrafficEngineeringTunnel, ServiceOverlay, MulticastDomain, SegmentRoutingPolicy, SRPolicy, MigrationStep, Route, Reachability, OSPFConvergence, SegmentRouting, SegmentRoutingOverlay, ISISUnderlay, HubSpokeReachability, IPsecTunnel, TunnelHealth, BGPNextHop, HotPotatoRouting, ColdPotatoRouting, ServiceReachability, PIMSparseMode, PIMSSM, RPFCheck, MulticastRoute, MulticastApplication, AnycastRP]
+    to: [Application, ApplicationEndpoint, VRF, VLAN, VNI, Prefix, IPv6Prefix, VXLANOverlay, EVPNControlPlane, VTEP, UnderlayRouting, PhysicalLink, DesignDecision, DesignConstraint, VPNService, WANTransport, QoSPolicy, MPLSDomain, MPLSService, RendezvousPoint, MigrationStep, LSA, OSPFNeighbor, SPFComputation, ISISAdjacency, SegmentRoutingExtension, ISISUnderlay, Reachability, MPLSOverlay, SegmentRoutingOverlay, HubRouter, HubSpokeReachability, DMVPNOverlay, UnderlayTransport, IKEPolicy, IKEState, RoutingState, IGPMetricToExit, PolicyPreference, IGPReachability, BGPRoute, SelectedBGPPath, ServiceReachability, SourceSpecificJoin, UnicastRoutingTable, PIMNeighbor, MulticastGroup, MSDP, SharedState, MulticastApplication, SLARequirement, TrafficFlow, LSP, LabelSwitchedPath, LabelBinding, RouteDistinguisher, RouteTarget, MPBGPVPNv4, MPBGPVPNv6, TargetedLDP, L2VPNSignaling, RSVPTE, IGPTEExtensions, TransportUnderlay, ServiceOverlay, Pseudowire, LDP]
     description: Target is required for source to operate or succeed.
-  OBSERVED_ON: {from: [Alert, Evidence], to: [Device, Interface, VXLANOverlay], description: Observation location.}
+  OBSERVED_ON: {from: [Alert, Evidence], to: [Device, Interface, ProtocolInstance, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, LSP, MPLSLSP, MPLSLabel, QoSPolicy, VXLANOverlay], description: Observation location.}
   INDICATES: {from: [Alert], to: [Symptom], description: Alert implies interpreted symptom.}
-  CONTAINS: {from: [Incident, OSPFProcess, OSPFArea, ISISArea], to: [Alert, OSPFArea, OSPFInterface, Device], description: Source owns or groups target within its semantic scope.}
+  CONTAINS: {from: [Incident, OSPFProcess, OSPFArea, ISISArea, SegmentList], to: [Alert, OSPFArea, OSPFInterface, Interface, Device, SID, NodeSID, PrefixSID, AdjacencySID, BindingSID], description: Source owns or groups target within its semantic scope.}
   IMPACTS: {from: [Incident, DesignRisk, Risk, VPNRisk, BGPPathRisk, MulticastRisk, QoSRisk, OversubscriptionRisk, Layer2Risk, TechnologyAddition, OSPFAdjacencyRisk, ISISAdjacencyRisk], to: [BusinessService, FailureDomain, ExistingProtocol], description: Source affects target.}
-  MODIFIES: {from: [Change], to: [RouteMap, PrefixList, RoutePolicy, DesignDecision, EIGRPMetric, Delay, Bandwidth, Reliability, Load, MTU, IGPMetricToExit, PolicyPreference], description: Change alters semantic object.}
-  AFFECTS: {from: [Change, CongestionEvent], to: [BusinessService, Application, Prefix, Risk, DesignRisk, InterfaceQueue], description: Change or operational event has downstream effect.}
+  MODIFIES: {from: [Change], to: [Policy, ProtocolInstance, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, RouteMap, PrefixList, RoutePolicy, DesignDecision, EIGRPMetric, Delay, Bandwidth, Reliability, Load, MTU, IGPMetricToExit, PolicyPreference], description: Change alters policy, protocol, or design state.}
+  AFFECTS: {from: [Change, CongestionEvent, Risk], to: [BusinessService, Application, Prefix, Risk, DesignRisk, Interface, InterfaceQueue], description: Change, congestion, or risk has downstream effect.}
   BASED_ON: {from: [Recommendation, DesignDecision], to: [Evidence], description: Conclusion is supported by evidence.}
   TESTS: {from: [ValidationRun], to: [Recommendation, ValidationCheck], description: Run executes proposed validation.}
+  REQUIRES:
+    from: [Recommendation, TechnologyReplacement, MergerDesign, BGPFreeCore]
+    to: [ValidationRun, CoexistencePlan, RoutingIntegrationPlan, EdgeToEdgeReachability]
+    description: Source requires validation or a prerequisite plan.
+  SATISFIES:
+    from: [DesignDecision, DesignOption, ValidationCheck]
+    to: [Requirement, DesignRequirement, BusinessRequirement, TechnicalRequirement, HighAvailabilityRequirement, ScalabilityRequirement, ConvergenceRequirement, SecurityRequirement, OperationalRequirement, MonitoringRequirement, DesignObjective]
+    description: Decision, option, or validation fulfills stated intent.
+  VIOLATES:
+    from: [DesignDecision, DesignOption]
+    to: [Constraint, CostConstraint, SkillConstraint, HardwareConstraint]
+    description: Decision or option conflicts with a binding constraint.
   HAS_OBJECTIVE: {from: [DesignDomain], to: [DesignObjective], description: Domain owns objective.}
   HAS_CONSTRAINT: {from: [DesignDomain], to: [DesignConstraint], description: Domain is bounded by constraint.}
   CONSIDERS: {from: [DesignDecision], to: [DesignOption], description: Decision evaluates option.}
@@ -143,14 +179,14 @@ relationship_types:
     to: [Device, Interface, PhysicalLink, VLAN, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, RedistributionRule, RouteMap, PrefixList, MPLSService, MPLSL3VPN, MPLSL2VPN, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass]
     description: Reified dependency resolves to the concrete network or policy component.
   SUPPORTS_LAYER:
-    from: [Interface, PhysicalLink, VLAN, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, MPLSService, MPLSL3VPN, MPLSL2VPN, OverlayService, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass, Application, Prefix]
-    to: [VLAN, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, MPLSService, MPLSL3VPN, MPLSL2VPN, OverlayService, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass, Application, BusinessService]
+    from: [Interface, PhysicalLink, VLAN, FHRPGroup, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, MPLSService, MPLSL3VPN, MPLSL2VPN, OverlayService, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass, Application, Prefix]
+    to: [VLAN, FHRPGroup, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, MPLSService, MPLSL3VPN, MPLSL2VPN, OverlayService, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass, Application, BusinessService]
     description: Lower layer or policy enables the next layer in an end-to-end service chain.
   OWNED_BY:
     from: [BusinessService, Application, Requirement, Risk, Policy, SecurityPolicy, QoSPolicy]
-    to: [ServiceOwner]
+    to: [Owner, ServiceOwner]
     description: Accountable team or role owns the semantic object.
-  HAS_SLA: {from: [BusinessService], to: [SLARequirement], description: Service is governed by measurable performance requirement.}
+  HAS_SLA: {from: [BusinessService], to: [SLA, SLARequirement], description: Service is governed by measurable performance requirement.}
   USES_ACCESS_INTERFACE: {from: [UserGroup], to: [Interface], description: User group enters the network through access interface.}
   HAS_SOURCE_PROTOCOL: {from: [RedistributionRule], to: [RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], description: Redistribution rule identifies route source protocol.}
   HAS_TARGET_PROTOCOL: {from: [RedistributionRule], to: [RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], description: Redistribution rule identifies route target protocol.}
@@ -178,6 +214,12 @@ constraints:
   - {label: DataPlaneDependency, property: id, type: unique}
   - {label: ServiceOwner, property: id, type: unique}
   - {label: UserGroup, property: id, type: unique}
+  - {label: Region, property: id, type: unique}
+  - {label: Role, property: id, type: unique}
+  - {label: ProtocolInstance, property: id, type: unique}
+  - {label: ApplicationEndpoint, property: id, type: unique}
+  - {label: SLA, property: id, type: unique}
+  - {label: Owner, property: id, type: unique}
 
 dependency_rules:
   - id: service-dependency-must-be-explicit

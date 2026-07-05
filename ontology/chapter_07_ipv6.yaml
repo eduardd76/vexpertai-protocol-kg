@@ -15,7 +15,7 @@ properties:
   IPv6TransitionMechanism:
     mechanism: {type: string, required: true}
 relationship_types:
-  ALLOCATES: {from: [IPv6AddressPlan, QueuingPolicy], to: [IPv6Prefix, BandwidthGuarantee], description: Design policy assigns a bounded address or bandwidth resource.}
+  ALLOCATES: {from: [IPv6AddressPlan, QueuingPolicy], to: [IPv6Prefix, Bandwidth, BandwidthGuarantee], description: Design policy assigns a bounded address or bandwidth resource.}
   TRANSITIONS_WITH: {from: [DesignDecision], to: [IPv6TransitionMechanism], description: Decision selects coexistence mechanism.}
   HAS_ND_DOMAIN: {from: [VLAN], to: [NeighborDiscoveryDomain], description: VLAN bounds neighbor discovery.}
   PROTECTED_BY: {from: [NeighborDiscoveryDomain], to: [FirstHopSecurityPolicy], description: Security policy protects first hop.}

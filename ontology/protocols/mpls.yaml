@@ -1,6 +1,6 @@
 ontology:
   id: chapter-11-mpls
-  title: MPLS Design
+  title: MPLS Protocol Module
   version: 2.0.0
   description: Label distribution, forwarding state, VPN services, pseudowires, traffic engineering, fast reroute, control-plane synchronization, underlay dependency, and service impact.
 
@@ -24,6 +24,10 @@ node_labels:
   Pseudowire: Emulated Layer 2 circuit across packet transport.
   MPBGPVPNv4: Multiprotocol BGP VPNv4 route distribution.
   MPBGPVPNv6: Multiprotocol BGP VPNv6 route distribution.
+  VPNv4Route: VPNv4 reachability carrying RD, route targets, and label semantics.
+  VPNv6Route: VPNv6 reachability carrying RD, route targets, and label semantics.
+  MPLSLabel: Label required for VPN or transport forwarding.
+  IGPUnderlay: IGP topology and reachability supporting label transport.
   TrafficEngineeringTunnel: Explicit or constrained MPLS traffic-engineering path.
   LDPIGPSynchronization: Mechanism delaying IGP transit use until labels are ready.
   LDPSessionProtection: Mechanism preserving LDP session state across link changes.
@@ -81,6 +85,8 @@ relationship_types:
   TARGETS_VRF: {from: [VPNRoute], to: [VRF], description: VPN route is intended for customer VRF.}
   HAS_VPN_ROUTE: {from: [MPLSService, MPLSL3VPN], to: [VPNRoute], description: MPLS VPN service owns customer route.}
   CARRIES_PREFIX: {from: [VPNRoute], to: [Prefix], description: VPN route carries customer prefix.}
+  REQUIRES_LABEL: {from: [BGPRoute, VPNv4Route, VPNv6Route], to: [MPLSLabel, Label], description: VPN route requires a forwarding label.}
+  IMPORTS_PREFIX_INTO: {from: [RouteTarget], to: [Prefix, VRF], description: Route target imports matching prefix into VRF.}
   HAS_TRANSPORT_LSP: {from: [MPLSService, MPLSL3VPN, MPLSL2VPN, VPWS, VPLS, ServiceOverlay], to: [LSP, MPLSLSP, LabelSwitchedPath], description: Service overlay uses MPLS transport path.}
   HAS_PSEUDOWIRE: {from: [MPLSService, MPLSL2VPN, VPWS, VPLS], to: [Pseudowire], description: Layer 2 service is realized by pseudowire.}
   USES_SIGNALING: {from: [Pseudowire], to: [TargetedLDP, L2VPNSignaling], description: Pseudowire uses explicit signaling control plane.}
@@ -126,6 +132,10 @@ constraints:
   - {label: RouteTarget, property: id, type: unique}
   - {label: MPBGPVPNv4, property: id, type: unique}
   - {label: MPBGPVPNv6, property: id, type: unique}
+  - {label: VPNv4Route, property: id, type: unique}
+  - {label: VPNv6Route, property: id, type: unique}
+  - {label: MPLSLabel, property: id, type: unique}
+  - {label: IGPUnderlay, property: id, type: unique}
   - {label: TrafficEngineeringTunnel, property: id, type: unique}
   - {label: FastReroute, property: id, type: unique}
   - {label: LDPIGPSynchronization, property: id, type: unique}

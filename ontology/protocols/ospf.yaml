@@ -1,6 +1,6 @@
 ontology:
   id: chapter-03-ospf
-  title: OSPF Design
+  title: OSPF Protocol Module
   version: 2.0.0
   description: OSPF hierarchy, adjacency, LSA lineage, convergence, protection, summarization, and redistribution dependencies.
 
@@ -38,6 +38,8 @@ node_labels:
   ExternalRoute: Reachability imported from another routing source.
   Reachability: Summarized ability to reach a prefix or service endpoint.
   OSPFConvergence: Recovery objective and observed summarized state.
+  InternalReachability: Summarized IGP reachability provided by OSPF.
+  BGPNextHopReachability: Reachability required to resolve a BGP next hop.
 
 properties:
   OSPFProcess:
@@ -68,7 +70,6 @@ properties:
     likelihood: {type: string, required: true}
 
 relationship_types:
-  RUNS_ON: {from: [OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], to: [Device, OSPFRouter, ISISRouter, EIGRPRouter], description: Routing process executes on a router device.}
   FORMED_OVER: {from: [OSPFNeighbor, ISISAdjacency, EIGRPNeighbor], to: [Interface, OSPFInterface, ISISInterface, EIGRPInterface], description: Neighbor adjacency uses its participating interface.}
   CONNECTS: {from: [ABR, VPNService], to: [OSPFArea, BackboneArea, Site], description: Source provides a modeled connection between its target domains or sites.}
   REDISTRIBUTES: {from: [ASBR], to: [ExternalRoute], description: ASBR imports external reachability into OSPF.}
@@ -90,6 +91,8 @@ relationship_types:
   INJECTS_DEFAULT: {from: [DefaultRouteInjection], to: [OSPFArea], description: Policy injects default into area.}
   HAS_METRIC: {from: [OSPFInterface, Route, ExternalRoute], to: [OSPFMetric, Cost], description: Source has OSPF preference value.}
   COMPUTES: {from: [OSPFProcess], to: [SPFComputation], description: Process schedules and runs SPF.}
+  PROVIDES_REACHABILITY: {from: [OSPFProcess], to: [InternalReachability], description: OSPF process provides internal reachability.}
+  SUPPORTS_REACHABILITY: {from: [OSPFProcess], to: [BGPNextHopReachability, IGPReachability], description: OSPF supports recursive BGP next-hop reachability.}
   PROTECTS_WITH: {from: [Route, Reachability], to: [LFA, FastReroute], description: Reachability uses local alternate protection.}
   PROVIDES_REACHABILITY_TO: {from: [Reachability], to: [Prefix], description: Reachability state applies to prefix.}
   EXPOSES_ADJACENCY_RISK: {from: [OSPFNeighbor, BroadcastSegment], to: [OSPFAdjacencyRisk], description: Adjacency state exposes convergence or route-loss risk.}
@@ -133,6 +136,8 @@ constraints:
   - {label: ExternalRoute, property: id, type: unique}
   - {label: Reachability, property: id, type: unique}
   - {label: OSPFConvergence, property: id, type: unique}
+  - {label: InternalReachability, property: id, type: unique}
+  - {label: BGPNextHopReachability, property: id, type: unique}
   - {label: BGPRoute, property: id, type: unique}
 
 dependency_rules:

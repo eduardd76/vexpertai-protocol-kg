@@ -1,0 +1,69 @@
+ontology:
+  id: protocol-security-policy
+  title: Security Policy Module
+  version: 1.0.0
+  description: Firewalls, zones, rules, NAT, ACLs, flows, endpoints, ports, and application-path enforcement.
+
+node_labels:
+  Firewall: Security enforcement device.
+  FirewallRule: Security policy statement.
+  SecurityZone: Group of assets sharing security policy.
+  NATPolicy: Address translation policy.
+  ACL: Ordered packet-filter policy.
+  TrafficFlow: Semantic source-to-destination application flow.
+  Destination: Generic destination endpoint.
+  Port: Transport port or port range.
+  ProtocolService: Transport protocol and application service tuple.
+
+properties:
+  FirewallRule:
+    action: {type: string, required: true}
+  TrafficFlow:
+    state: {type: string, required: true}
+  Port:
+    number: {type: integer, required: true}
+
+relationship_types:
+  ALLOWS: {from: [FirewallRule, ACL], to: [TrafficFlow], description: Security policy permits traffic flow.}
+  DENIES: {from: [FirewallRule, ACL], to: [TrafficFlow], description: Security policy denies traffic flow.}
+  FROM: {from: [TrafficFlow], to: [SecurityZone], description: Flow originates in security zone.}
+  TO: {from: [TrafficFlow], to: [SecurityZone], description: Flow terminates in security zone.}
+  TRANSLATES: {from: [NATPolicy], to: [Source, Destination], description: NAT policy translates source or destination.}
+  ENFORCES: {from: [Firewall], to: [FirewallRule, NATPolicy, ACL], description: Firewall enforces policy object.}
+
+constraints:
+  - {label: Firewall, property: id, type: unique}
+  - {label: FirewallRule, property: id, type: unique}
+  - {label: SecurityZone, property: id, type: unique}
+  - {label: NATPolicy, property: id, type: unique}
+  - {label: ACL, property: id, type: unique}
+  - {label: TrafficFlow, property: id, type: unique}
+  - {label: Destination, property: id, type: unique}
+  - {label: Port, property: id, type: unique}
+  - {label: ProtocolService, property: id, type: unique}
+
+dependency_rules:
+  - id: application-flow-dependency
+    source: Application
+    relationship: DEPENDS_ON
+    target: [TrafficFlow]
+    rationale: Application reachability requires an allowed traffic flow.
+
+risk_rules:
+  - id: required-flow-denied
+    applies_to: TrafficFlow
+    when: business-required flow is denied by firewall policy
+    severity: critical
+    response: Validate exact selectors and stage the smallest safe rule correction.
+
+validation_queries:
+  - id: application-flow-without-rule
+    description: Find application flows with no permitting firewall rule.
+    cypher: |
+      MATCH (application:Application)-[:DEPENDS_ON]->(flow:TrafficFlow)
+      WHERE NOT (:FirewallRule)-[:ALLOWS]->(flow)
+      RETURN application.id, flow.id
+
+example_scenarios:
+  - id: payment-firewall-path
+    summary: Trace Payment-App reachability through zones, flow, and firewall rule.

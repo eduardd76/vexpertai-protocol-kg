@@ -1,0 +1,18 @@
+ontology:
+  id: interaction-fhrp-ospf
+  title: FHRP and OSPF Interaction
+  version: 1.0.0
+  description: Active gateway eligibility depends on routed reachability.
+node_labels: {}
+properties: {}
+relationship_types:
+  FHRP_ACTIVE_SHOULD_TRACK_IGP_REACHABILITY: {from: [FHRPGroup], to: [IGPReachability], description: Active FHRP role should track upstream IGP reachability.}
+constraints: []
+dependency_rules:
+  - {id: fhrp-ospf-tracking, source: FHRPGroup, relationship: FHRP_ACTIVE_SHOULD_TRACK_IGP_REACHABILITY, target: [IGPReachability], rationale: Gateway should not remain active without upstream reachability.}
+risk_rules:
+  - {id: fhrp-no-igp-tracking, applies_to: FHRPGroup, when: active gateway does not track IGP reachability, severity: high, response: Add tested tracking with stable failover thresholds.}
+validation_queries:
+  - {id: fhrp-without-igp, description: Find active groups without IGP tracking, cypher: "MATCH (g:FHRPGroup) WHERE NOT (g)-[:FHRP_ACTIVE_SHOULD_TRACK_IGP_REACHABILITY]->() RETURN g.id"}
+example_scenarios:
+  - {id: gateway-upstream-loss, summary: FHRP active role follows OSPF reachability loss.}

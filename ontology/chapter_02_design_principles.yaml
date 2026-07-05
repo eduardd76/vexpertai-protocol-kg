@@ -74,18 +74,9 @@ properties:
 relationship_types:
   DERIVED_FROM: {from: [DesignObjective, DesignConstraint, DesignRequirement], to: [Requirement, BusinessRequirement, TechnicalRequirement], description: Design statement traces to a stakeholder need.}
   BALANCES: {from: [DesignDecision, DesignOption], to: [AvailabilityTarget, ConvergenceTarget, OperabilityConstraint, CapacityModel, ScalabilityRequirement, OperationalRequirement], description: Decision or option reconciles competing outcomes.}
-  SATISFIES:
-    from: [DesignDecision, DesignOption, ValidationCheck]
-    to: [Requirement, DesignRequirement, BusinessRequirement, TechnicalRequirement, HighAvailabilityRequirement, ScalabilityRequirement, ConvergenceRequirement, SecurityRequirement, OperationalRequirement, MonitoringRequirement, DesignObjective]
-    description: Source fulfills a stated requirement or objective.
-  VIOLATES: {from: [DesignOption], to: [Constraint, CostConstraint, SkillConstraint, HardwareConstraint], description: Option conflicts with a binding constraint.}
   CHOOSES: {from: [DesignDecision], to: [DesignOption], description: Decision selects the approved option.}
   CREATES_RISK: {from: [DesignDecision], to: [Risk], description: Decision creates or accepts a modeled risk.}
   HAS_RISK: {from: [DesignOption, MigrationStep, TechnologyAddition, TechnologyReplacement], to: [Risk], description: Candidate or change exposes a modeled risk.}
-  REQUIRES:
-    from: [TechnologyReplacement, MergerDesign, BGPFreeCore]
-    to: [CoexistencePlan, RoutingIntegrationPlan, EdgeToEdgeReachability]
-    description: Change design cannot proceed safely without the target plan.
   PRIORITIZED_BY: {from: [Requirement, DesignRequirement, BusinessRequirement, TechnicalRequirement, HighAvailabilityRequirement, ScalabilityRequirement, ConvergenceRequirement, SecurityRequirement, OperationalRequirement, MonitoringRequirement], to: [BusinessCriticality], description: Business impact determines requirement priority.}
   COVERS: {from: [MonitoringRequirement], to: [ProtocolFeature], description: Monitoring requirement observes feature state and behavior.}
   HAS_FEATURE: {from: [ExistingProtocol], to: [ProtocolFeature], description: Existing protocol exposes a feature requiring design attention.}

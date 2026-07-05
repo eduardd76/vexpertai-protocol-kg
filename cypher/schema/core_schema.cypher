@@ -1,0 +1,14 @@
+CREATE CONSTRAINT core_device_id IF NOT EXISTS FOR (n:Device) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_interface_id IF NOT EXISTS FOR (n:Interface) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_site_id IF NOT EXISTS FOR (n:Site) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_prefix_id IF NOT EXISTS FOR (n:Prefix) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_route_id IF NOT EXISTS FOR (n:Route) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_protocol_instance_id IF NOT EXISTS FOR (n:ProtocolInstance) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_policy_id IF NOT EXISTS FOR (n:Policy) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_application_id IF NOT EXISTS FOR (n:Application) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_business_service_id IF NOT EXISTS FOR (n:BusinessService) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_change_id IF NOT EXISTS FOR (n:Change) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_incident_id IF NOT EXISTS FOR (n:Incident) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT core_evidence_id IF NOT EXISTS FOR (n:Evidence) REQUIRE n.id IS UNIQUE;
+CREATE INDEX core_node_name IF NOT EXISTS FOR (n:BusinessService) ON (n.name);
+CREATE INDEX core_prefix_cidr IF NOT EXISTS FOR (n:Prefix) ON (n.cidr);

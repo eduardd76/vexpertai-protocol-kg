@@ -1,0 +1,10 @@
+CREATE CONSTRAINT protocol_ospf_process_id IF NOT EXISTS FOR (n:OSPFProcess) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_bgp_process_id IF NOT EXISTS FOR (n:BGPProcess) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_stp_instance_id IF NOT EXISTS FOR (n:STPInstance) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_fhrp_group_id IF NOT EXISTS FOR (n:FHRPGroup) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_mpls_lsp_id IF NOT EXISTS FOR (n:MPLSLSP) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_vpn_service_id IF NOT EXISTS FOR (n:VPNService) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_sr_policy_id IF NOT EXISTS FOR (n:SRPolicy) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_qos_policy_id IF NOT EXISTS FOR (n:QoSPolicy) REQUIRE n.id IS UNIQUE;
+CREATE CONSTRAINT protocol_firewall_rule_id IF NOT EXISTS FOR (n:FirewallRule) REQUIRE n.id IS UNIQUE;
+CREATE INDEX protocol_module_name IF NOT EXISTS FOR (n:ProtocolInstance) ON (n.module);

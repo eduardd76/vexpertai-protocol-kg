@@ -69,7 +69,7 @@ relationship_types:
   HAS_EIGRP_NEIGHBOR: {from: [EIGRPProcess, EIGRPRouter], to: [EIGRPNeighbor], description: Process or router owns neighbor state.}
   HAS_TOPOLOGY_TABLE: {from: [EIGRPProcess], to: [EIGRPTopologyTable], description: Process owns topology candidates.}
   HAS_ROUTE: {from: [EIGRPTopologyTable], to: [SuccessorRoute, FeasibleSuccessorRoute, SummaryRoute], description: Topology table contains candidate or summary route.}
-  LEARNED_BY: {from: [Prefix], to: [EIGRPProcess], description: Prefix is learned through EIGRP process.}
+  LEARNED_BY: {from: [Prefix], to: [EIGRPProcess, OSPFProcess], description: Prefix is learned through an IGP process.}
   SELECTED_BY: {from: [SuccessorRoute, BGPRoute], to: [EIGRPMetric, BGPBestPathDecision], description: Route selection traces to its metric or best-path decision.}
   SATISFIES_FEASIBILITY: {from: [FeasibleSuccessorRoute], to: [FeasibilityCondition], description: Backup path meets loop-free feasibility test.}
   REDUCES: {from: [StubRouter], to: [QueryDomain], description: Stub behavior limits query propagation.}

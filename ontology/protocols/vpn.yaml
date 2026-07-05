@@ -1,6 +1,6 @@
 ontology:
   id: chapter-06-vpn
-  title: VPN Design
+  title: VPN Protocol Module
   version: 2.0.0
   description: VPN service types, tunnel cryptography, MPLS segmentation, DMVPN dependencies, health, SLA, failover, and application impact.
 
@@ -57,14 +57,10 @@ properties:
     likelihood: {type: string, required: true}
 
 relationship_types:
-  USES:
-    from: [DMVPN, MPLSL3VPN, MPLSL2VPN]
-    to: [GRE, NHRP, IPsecTunnel, VRF, RouteTarget, VPNRouteTarget, RouteDistinguisher, MPBGP]
-    description: VPN design uses protocol, tunnel, or segmentation component.
   HAS_TUNNEL: {from: [VPNService, SiteToSiteVPN, RemoteAccessVPN, DMVPN], to: [IPsecTunnel, GRE, OverlayTunnel, TunnelInterface], description: VPN service is realized by tunnel component.}
   IMPORTS: {from: [VRF], to: [RouteTarget, VPNRouteTarget], description: VRF imports matching VPN routes.}
   EXPORTS: {from: [VRF], to: [RouteTarget, VPNRouteTarget], description: VRF exports matching VPN routes.}
-  IMPORTED_BY: {from: [VPNRoute], to: [RouteTarget, VPNRouteTarget], description: VPN route is eligible for import through route target.}
+  IMPORTED_BY: {from: [VPNRoute, VPNv4Route, VPNv6Route], to: [RouteTarget, VPNRouteTarget], description: VPN route is eligible for import through route target.}
   HAS_HEALTH: {from: [VPNService, IPsecTunnel, OverlayTunnel], to: [TunnelHealth], description: VPN object exposes summarized health.}
   HAS_STATE: {from: [IPsecTunnel, TunnelInterface], to: [IKEState, RoutingState], description: Tunnel exposes control and routed state.}
   HAS_ENCRYPTION_DOMAIN: {from: [CryptoMap, IPsecTunnel], to: [EncryptionDomain], description: Crypto policy or tunnel selects protected traffic.}

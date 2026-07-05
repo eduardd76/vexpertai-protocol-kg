@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_all_ontology_documents_have_required_sections() -> None:
     documents = load_ontology_directory(ROOT / "ontology")
 
-    assert len(documents) == 15
+    assert len(documents) == 26
     for document in documents:
         assert set(REQUIRED_TOP_LEVEL_KEYS).issubset(document.data)
 

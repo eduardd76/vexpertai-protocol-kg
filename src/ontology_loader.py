@@ -61,7 +61,7 @@ def load_ontology_file(path: Path) -> OntologyDocument:
 
 def load_ontology_directory(path: Path = ONTOLOGY_DIR) -> list[OntologyDocument]:
     """Load all ontology YAML files in deterministic filename order."""
-    files = sorted(path.glob("*.yaml"))
+    files = sorted(path.rglob("*.yaml"), key=lambda item: item.relative_to(path).as_posix())
     if not files:
         raise OntologyFormatError(f"{path}: no ontology YAML files found")
     return [load_ontology_file(file_path) for file_path in files]

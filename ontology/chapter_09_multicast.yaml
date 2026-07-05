@@ -7,7 +7,6 @@ ontology:
 node_labels:
   MulticastDomain: Bounded multicast control and forwarding domain.
   MulticastGroup: Group address with application and policy meaning.
-  Source: Producer address for multicast traffic.
   Receiver: Endpoint subscribing to multicast traffic.
   MulticastSource: Compatibility label for a multicast source.
   MulticastReceiver: Compatibility label for a multicast receiver.

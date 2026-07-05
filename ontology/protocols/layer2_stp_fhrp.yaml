@@ -1,6 +1,6 @@
 ontology:
   id: chapter-01-layer2
-  title: Layer 2 Design
+  title: Layer 2, STP, and FHRP Module
   version: 2.0.0
   description: Ethernet segmentation, VLAN transport, STP, loop protection, link aggregation, FHRP, and access design tradeoffs.
 node_labels:
@@ -25,6 +25,7 @@ node_labels:
   VTPDomain: VLAN distribution administrative domain.
   NativeVLAN: Untagged VLAN behavior on a trunk.
   FirstHopRedundancyGroup: Shared default-gateway service.
+  FHRPGroup: Canonical first-hop redundancy group used by interaction views.
   HSRPGroup: HSRP first-hop redundancy group.
   VRRPGroup: VRRP first-hop redundancy group.
   GLBPGroup: GLBP load-sharing gateway group.
@@ -75,18 +76,19 @@ relationship_types:
   CARRIED_BY: {from: [VLAN], to: [Trunk], description: Trunk permits the VLAN across a link.}
   MAPPED_TO: {from: [VLAN], to: [STPInstance, VNI], description: VLAN maps to a loop-control or overlay identifier.}
   ELECTS: {from: [STPInstance, BroadcastSegment, ISISBroadcastSegment], to: [STPRootBridge, DR, BDR, DIS], description: Control domain elects the role used by its forwarding topology.}
-  BLOCKS: {from: [STPInstance], to: [STPBlockedPort], description: STP prevents forwarding on a port to remove a loop.}
-  BELONGS_TO: {from: [AccessPort, BGPNeighbor, ClassMap], to: [VLAN, BGPProcess, QoSPolicy], description: Object belongs to its forwarding, control-plane, or policy owner.}
+  BLOCKS: {from: [STPInstance], to: [Interface, STPBlockedPort], description: STP prevents forwarding on a port to remove a loop.}
   AGGREGATES: {from: [PortChannel, LAG], to: [Interface], description: Logical bundle contains physical interface.}
-  SPANS: {from: [MLAG], to: [Switch], description: MLAG control domain spans switches.}
-  PROVIDES: {from: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup], to: [DefaultGateway], description: Redundancy group supplies gateway service.}
+  SPANS: {from: [MLAG], to: [Device, Switch], description: MLAG control domain spans switches.}
+  PROVIDES: {from: [FHRPGroup, FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup], to: [DefaultGateway], description: Redundancy group supplies gateway service.}
+  ACTIVE_ON: {from: [FHRPGroup, HSRPGroup, VRRPGroup, GLBPGroup], to: [Device], description: FHRP group has active forwarding role on device.}
+  STANDBY_ON: {from: [FHRPGroup, HSRPGroup, VRRPGroup], to: [Device], description: FHRP group has standby forwarding role on device.}
   HAS_ACTIVE_GATEWAY: {from: [HSRPGroup, VRRPGroup], to: [FHRPActiveGateway], description: Group assigns active forwarding role.}
   HAS_STANDBY_GATEWAY: {from: [HSRPGroup, VRRPGroup], to: [FHRPStandbyGateway], description: Group assigns standby forwarding role.}
   HAS_AVG: {from: [GLBPGroup], to: [ActiveVirtualGateway], description: GLBP group has active virtual gateway.}
   HAS_AVF: {from: [GLBPGroup], to: [ActiveVirtualForwarder], description: GLBP group has active virtual forwarder.}
   HAS_VIRTUAL_IP: {from: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup, DefaultGateway], to: [VirtualIP], description: Gateway object owns shared IP.}
   HAS_VIRTUAL_MAC: {from: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup, DefaultGateway, ActiveVirtualForwarder], to: [VirtualMAC], description: Gateway object owns shared MAC.}
-  SHOULD_ALIGN_WITH: {from: [STPRootBridge], to: [FHRPActiveGateway], description: STP and active gateway roles should be colocated for the VLAN.}
+  SHOULD_ALIGN_WITH: {from: [STPRootBridge], to: [FHRPGroup, FHRPActiveGateway], description: STP and active gateway roles should be colocated for the VLAN.}
   MAY_ENABLE: {from: [NativeVLAN], to: [VLANHoppingRisk], description: Native VLAN mismatch can enable unintended tag interpretation.}
   RECEIVED_ON: {from: [BPDU], to: [AccessPort, Trunk], description: Port received summarized BPDU observation.}
   TRIGGERS: {from: [BPDU], to: [BPDUGuard], description: BPDU activates edge-port protection.}
@@ -125,6 +127,7 @@ constraints:
   - {label: VTPDomain, property: id, type: unique}
   - {label: NativeVLAN, property: id, type: unique}
   - {label: FirstHopRedundancyGroup, property: id, type: unique}
+  - {label: FHRPGroup, property: id, type: unique}
   - {label: HSRPGroup, property: id, type: unique}
   - {label: VRRPGroup, property: id, type: unique}
   - {label: GLBPGroup, property: id, type: unique}

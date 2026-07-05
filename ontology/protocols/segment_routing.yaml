@@ -1,0 +1,79 @@
+ontology:
+  id: protocol-segment-routing
+  title: Segment Routing Protocol Module
+  version: 1.0.0
+  description: SR-MPLS and SRv6 identifiers, policies, segment lists, candidates, colors, endpoints, and traffic steering.
+
+node_labels:
+  SegmentRoutingDomain: SR-MPLS or SRv6 control and forwarding scope.
+  SRMPLS: Segment routing over the MPLS data plane.
+  SRv6: Segment routing over the IPv6 data plane.
+  SID: Generic segment identifier.
+  NodeSID: Prefix SID representing a router node.
+  PrefixSID: Segment identifier attached to a prefix.
+  AdjacencySID: Segment identifier representing a local adjacency.
+  BindingSID: Segment identifier representing an SR policy or segment list.
+  SRPolicy: Policy selecting candidate paths and segment lists.
+  SegmentRoutingPolicy: Ordered segment-list and path intent.
+  SegmentList: Ordered list of segment identifiers.
+  CandidatePath: Candidate path for an SR policy.
+  Color: Intent value selecting an SR policy.
+  Endpoint: Destination used by an SR policy.
+
+properties:
+  SID:
+    value: {type: string, required: true}
+  SRPolicy:
+    state: {type: string, required: true}
+  CandidatePath:
+    preference: {type: integer, required: true}
+
+relationship_types:
+  HAS_SR_MODE: {from: [SegmentRoutingDomain], to: [SRMPLS, SRv6], description: Domain uses an SR data-plane mode.}
+  USES_SEGMENT_LIST: {from: [SRPolicy, SegmentRoutingPolicy], to: [SegmentList], description: SR policy uses ordered segment list.}
+  HAS_CANDIDATE_PATH: {from: [SRPolicy], to: [CandidatePath], description: SR policy owns candidate path.}
+  USES_COLOR: {from: [SRPolicy], to: [Color], description: SR policy is selected by color.}
+  TARGETS_ENDPOINT: {from: [SRPolicy], to: [Endpoint], description: SR policy terminates at endpoint.}
+  STEERS: {from: [SRPolicy, SegmentRoutingPolicy], to: [TrafficFlow], description: SR policy steers traffic flow.}
+
+constraints:
+  - {label: SegmentRoutingDomain, property: id, type: unique}
+  - {label: SRMPLS, property: id, type: unique}
+  - {label: SRv6, property: id, type: unique}
+  - {label: SID, property: id, type: unique}
+  - {label: NodeSID, property: id, type: unique}
+  - {label: PrefixSID, property: id, type: unique}
+  - {label: AdjacencySID, property: id, type: unique}
+  - {label: BindingSID, property: id, type: unique}
+  - {label: SRPolicy, property: id, type: unique}
+  - {label: SegmentRoutingPolicy, property: id, type: unique}
+  - {label: SegmentList, property: id, type: unique}
+  - {label: CandidatePath, property: id, type: unique}
+  - {label: Color, property: id, type: unique}
+  - {label: Endpoint, property: id, type: unique}
+
+dependency_rules:
+  - id: sr-policy-segment-list
+    source: SRPolicy
+    relationship: USES_SEGMENT_LIST
+    target: [SegmentList]
+    rationale: An SR policy requires an ordered segment list.
+
+risk_rules:
+  - id: sr-policy-missing-segments
+    applies_to: SRPolicy
+    when: active policy has no usable segment list
+    severity: high
+    response: Validate candidate path, SID advertisements, and underlay reachability.
+
+validation_queries:
+  - id: sr-policy-without-list
+    description: Find SR policies without segment lists.
+    cypher: |
+      MATCH (policy:SRPolicy)
+      WHERE NOT (policy)-[:USES_SEGMENT_LIST]->()
+      RETURN policy.id, policy.name
+
+example_scenarios:
+  - id: sr-underlay-dependency
+    summary: Trace SR policy failure to missing IGP SID advertisement.

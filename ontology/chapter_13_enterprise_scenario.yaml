@@ -7,7 +7,6 @@ node_labels:
   EnterpriseCampus: Campus location and access-distribution-core domain.
   BranchSite: Remote enterprise site.
   WANTransport: Provider or private wide-area transport.
-  SecurityZone: Group of assets sharing security policy.
 properties:
   WANTransport:
     transport_type: {type: string, required: true}

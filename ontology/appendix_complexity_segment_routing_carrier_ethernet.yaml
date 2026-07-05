@@ -5,9 +5,7 @@ ontology:
   description: Design complexity control, segment-routing intent, and carrier Ethernet service semantics.
 node_labels:
   ComplexityBudget: Limit on protocols, states, interactions, and operational burden.
-  SegmentRoutingDomain: SR-MPLS or SRv6 control and forwarding scope.
   SegmentIdentifier: Node, adjacency, binding, or service segment.
-  SegmentRoutingPolicy: Ordered segment-list and path intent.
   CarrierEthernetService: E-Line, E-LAN, or E-Tree service abstraction.
   ServiceDemarcation: Provider-customer responsibility boundary.
 properties:

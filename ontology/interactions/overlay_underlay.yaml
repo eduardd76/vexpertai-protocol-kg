@@ -1,0 +1,19 @@
+ontology:
+  id: interaction-overlay-underlay
+  title: Overlay and Underlay Interaction
+  version: 1.0.0
+  description: Overlay availability depends on routed or label-switched underlay.
+node_labels: {}
+properties: {}
+relationship_types:
+  OVERLAY_DEPENDS_ON_UNDERLAY: {from: [OverlayService, VXLANOverlay, VPNService, MPLSOverlay, DMVPN, SRPolicy], to: [UnderlayRouting, UnderlayTransport, IGPUnderlay, TransportUnderlay], description: Overlay requires underlay reachability and forwarding.}
+  MPLS_LSP_DEPENDS_ON_IGP_UNDERLAY: {from: [LSP, MPLSLSP, LabelSwitchedPath], to: [IGPUnderlay, UnderlayRouting, TransportUnderlay], description: MPLS LSP requires IGP underlay.}
+constraints: []
+dependency_rules:
+  - {id: overlay-underlay, source: OverlayService, relationship: OVERLAY_DEPENDS_ON_UNDERLAY, target: [UnderlayRouting], rationale: Overlay cannot operate without underlay reachability.}
+risk_rules:
+  - {id: overlay-underlay-failure, applies_to: OverlayService, when: required underlay is failed, severity: critical, response: Restore underlay before changing overlay configuration.}
+validation_queries:
+  - {id: overlay-failed-underlay, description: Find overlays on failed underlay, cypher: "MATCH (o:OverlayService)-[:OVERLAY_DEPENDS_ON_UNDERLAY]->(u) WHERE coalesce(u.state,u.status) <> 'up' RETURN o.id,u.id"}
+example_scenarios:
+  - {id: vxlan-mpls-underlay, summary: Overlay failure traces to physical or IGP underlay.}

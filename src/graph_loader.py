@@ -60,7 +60,16 @@ def apply_generated_schema(driver: Driver) -> int:
 
 def load_seed_cypher(driver: Driver, seed_dir: Path = SEED_DIR) -> dict[str, int]:
     results: dict[str, int] = {}
-    for path in sorted(seed_dir.glob("*.cypher")):
+    explicit_order = {
+        "global_seed.cypher": 100,
+        "protocol_modules_seed.cypher": 101,
+        "interaction_scenarios_seed.cypher": 102,
+    }
+    paths = sorted(
+        seed_dir.glob("*.cypher"),
+        key=lambda path: (explicit_order.get(path.name, 0), path.name),
+    )
+    for path in paths:
         statements = split_cypher_statements(path.read_text(encoding="utf-8"))
         results[path.name] = execute_statements(driver, statements)
     return results

@@ -1,0 +1,18 @@
+ontology:
+  id: interaction-igp-segment-routing
+  title: IGP and Segment Routing Interaction
+  version: 1.0.0
+  description: SR policy depends on IGP SID advertisements.
+node_labels: {}
+properties: {}
+relationship_types:
+  SR_POLICY_DEPENDS_ON_IGP_SID_ADVERTISEMENT: {from: [SRPolicy, SegmentRoutingPolicy], to: [NodeSID, PrefixSID, AdjacencySID, OSPFProcess, ISISProcess], description: SR policy requires IGP-advertised SIDs.}
+constraints: []
+dependency_rules:
+  - {id: sr-igp-sid, source: SRPolicy, relationship: SR_POLICY_DEPENDS_ON_IGP_SID_ADVERTISEMENT, target: [PrefixSID], rationale: SR path requires advertised SID state.}
+risk_rules:
+  - {id: sr-missing-sid, applies_to: SRPolicy, when: required SID is absent from IGP, severity: high, response: Restore IGP capability and SID advertisement.}
+validation_queries:
+  - {id: sr-policy-missing-sid, description: Find SR policy with missing SID, cypher: "MATCH (p:SRPolicy)-[:SR_POLICY_DEPENDS_ON_IGP_SID_ADVERTISEMENT]->(s:SID) WHERE s.state = 'missing' RETURN p.id"}
+example_scenarios:
+  - {id: sr-prefix-sid-loss, summary: SR policy fails after prefix SID disappears.}

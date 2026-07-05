@@ -1,0 +1,18 @@
+ontology:
+  id: interaction-firewall-application
+  title: Firewall and Application Interaction
+  version: 1.0.0
+  description: Firewall policy controls required application flows.
+node_labels: {}
+properties: {}
+relationship_types:
+  FIREWALL_POLICY_CONTROLS_APPLICATION_PATH: {from: [FirewallRule, SecurityPolicy], to: [TrafficFlow, Application, ApplicationEndpoint], description: Firewall policy controls application path.}
+constraints: []
+dependency_rules:
+  - {id: firewall-application-path, source: FirewallRule, relationship: FIREWALL_POLICY_CONTROLS_APPLICATION_PATH, target: [TrafficFlow], rationale: Required application traffic must be allowed by exact policy.}
+risk_rules:
+  - {id: firewall-path-denied, applies_to: FirewallRule, when: required application flow is denied, severity: critical, response: Validate selectors and add the narrowest safe permit.}
+validation_queries:
+  - {id: app-path-without-firewall, description: Find application flows without controlling firewall policy, cypher: "MATCH (f:TrafficFlow) WHERE NOT (:FirewallRule)-[:FIREWALL_POLICY_CONTROLS_APPLICATION_PATH]->(f) RETURN f.id"}
+example_scenarios:
+  - {id: payment-firewall-control, summary: Payment endpoint flow is controlled by production firewall rule.}

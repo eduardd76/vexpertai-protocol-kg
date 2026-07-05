@@ -31,9 +31,6 @@ node_labels:
   SingleTopologyISIS: Shared topology for multiple address families.
   SegmentRoutingExtension: IS-IS capability and TLVs supporting segment routing.
   SegmentRouting: Segment-routing control and forwarding intent.
-  PrefixSID: Segment identifier attached to a prefix.
-  NodeSID: Prefix SID representing a router node.
-  AdjacencySID: Segment identifier representing a local adjacency.
   ISISRouter: Router participating in an IS-IS process.
   ISISBroadcastSegment: Multiaccess IS-IS network electing a DIS.
   Capability: Advertised protocol capability.

@@ -1,0 +1,23 @@
+ontology:
+  id: interaction-stp-fhrp
+  title: STP and FHRP Interaction
+  version: 1.0.0
+  description: Aligns Layer 2 forwarding root with active default gateway.
+node_labels: {}
+properties: {}
+relationship_types:
+  STP_ROOT_SHOULD_ALIGN_WITH_FHRP_ACTIVE: {from: [STPRootBridge], to: [FHRPGroup], description: STP root placement should align with active FHRP gateway.}
+constraints: []
+dependency_rules:
+  - {id: stp-fhrp-alignment, source: STPRootBridge, relationship: STP_ROOT_SHOULD_ALIGN_WITH_FHRP_ACTIVE, target: [FHRPGroup], rationale: Misalignment creates unnecessary inter-distribution transit.}
+risk_rules:
+  - {id: stp-fhrp-misalignment, applies_to: STPRootBridge, when: root and active gateway are hosted on different devices, severity: medium, response: Align roles per VLAN after validating failure behavior.}
+validation_queries:
+  - id: stp-fhrp-misaligned
+    description: Find root and active gateway placement mismatch.
+    cypher: |
+      MATCH (root:STPRootBridge)-[:STP_ROOT_SHOULD_ALIGN_WITH_FHRP_ACTIVE]->(group:FHRPGroup)
+      WHERE root.device_id <> group.active_device_id
+      RETURN root.id, group.id
+example_scenarios:
+  - {id: vlan100-root-gateway, summary: VLAN 100 root is Dist-01 while active gateway is Dist-02.}

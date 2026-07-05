@@ -1,0 +1,25 @@
+ontology:
+  id: interaction-ospf-bgp
+  title: OSPF and BGP Interaction
+  version: 1.0.0
+  description: Models next-hop recursion, best-path IGP cost, and redistribution policy.
+node_labels: {}
+properties: {}
+relationship_types:
+  BGP_NEIGHBOR_DEPENDS_ON_IGP_REACHABILITY: {from: [BGPNeighbor], to: [IGPReachability, OSPFProcess], description: BGP session transport depends on IGP reachability.}
+  BGP_ROUTE_DEPENDS_ON_NEXT_HOP_REACHABILITY: {from: [BGPRoute], to: [IGPReachability, BGPNextHopReachability], description: BGP route usability depends on recursive next-hop reachability.}
+  BGP_BEST_PATH_DEPENDS_ON_IGP_METRIC: {from: [BGPBestPathDecision], to: [OSPFMetric, IGPMetricToExit], description: Best-path result may depend on IGP cost to next hop.}
+  OSPF_ROUTE_REDISTRIBUTED_INTO_BGP: {from: [Route, Prefix], to: [BGPRoute], description: OSPF reachability is redistributed into BGP.}
+  ROUTE_MAP_CONTROLS_REDISTRIBUTION: {from: [RouteMap], to: [RedistributionRule], description: Route map controls the protocol redistribution boundary.}
+  PREFIX_LIST_CONTROLS_PREFIX_VISIBILITY: {from: [PrefixList], to: [Prefix], description: Prefix list determines redistributed prefix visibility.}
+  REDISTRIBUTION_PRODUCES_BGP_ROUTE: {from: [RedistributionRule], to: [BGPRoute], description: Redistribution rule produces or withdraws a BGP route.}
+  BGP_ROUTE_CARRIES_PREFIX: {from: [BGPRoute], to: [Prefix], description: BGP route carries semantic prefix.}
+constraints: []
+dependency_rules:
+  - {id: bgp-next-hop-igp, source: BGPRoute, relationship: BGP_ROUTE_DEPENDS_ON_NEXT_HOP_REACHABILITY, target: [IGPReachability], rationale: BGP route requires recursive IGP resolution.}
+risk_rules:
+  - {id: redistribution-policy-loss, applies_to: PrefixList, when: recent deny removes a business prefix from redistribution, severity: critical, response: Restore only the intended entry and validate advertisement.}
+validation_queries:
+  - {id: bgp-route-unresolved, description: Find BGP routes with failed IGP recursion, cypher: "MATCH (r:BGPRoute)-[:BGP_ROUTE_DEPENDS_ON_NEXT_HOP_REACHABILITY]->(i:IGPReachability) WHERE i.state <> 'up' RETURN r.id"}
+example_scenarios:
+  - {id: payment-prefix-withdrawal, summary: CHG-8821 removes Payment-App prefix from OSPF-to-BGP redistribution.}

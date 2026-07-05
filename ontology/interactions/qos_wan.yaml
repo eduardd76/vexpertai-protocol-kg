@@ -1,0 +1,18 @@
+ontology:
+  id: interaction-qos-wan
+  title: QoS and WAN Interaction
+  version: 1.0.0
+  description: WAN QoS protects application SLA during congestion.
+node_labels: {}
+properties: {}
+relationship_types:
+  QOS_POLICY_PROTECTS_APPLICATION_SLA: {from: [QoSPolicy], to: [SLA, SLARequirement], description: QoS policy protects application performance objective.}
+constraints: []
+dependency_rules:
+  - {id: qos-sla-protection, source: QoSPolicy, relationship: QOS_POLICY_PROTECTS_APPLICATION_SLA, target: [SLA], rationale: WAN classification and queueing protect service SLA.}
+risk_rules:
+  - {id: qos-classification-gap, applies_to: QoSPolicy, when: critical application remains best effort during congestion, severity: high, response: Correct classification and validate interface policy.}
+validation_queries:
+  - {id: sla-without-qos, description: Find SLAs without protecting QoS policy, cypher: "MATCH (s:SLA) WHERE NOT (:QoSPolicy)-[:QOS_POLICY_PROTECTS_APPLICATION_SLA]->(s) RETURN s.id"}
+example_scenarios:
+  - {id: payment-qos-congestion, summary: Payment traffic violates low-latency SLA as best effort.}
