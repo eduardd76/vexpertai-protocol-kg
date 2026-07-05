@@ -11,6 +11,7 @@ from neo4j.exceptions import AuthError, Neo4jError, ServiceUnavailable
 from rich.console import Console
 from rich.table import Table
 
+from graph_queries import GraphQueries
 from queries import (
     design_option_ranking,
     global_change_blast_radius,
@@ -72,6 +73,24 @@ def run_section(
         print_rows(question, query_function(driver))
 
 
+def print_graph_view(title: str, graph: dict[str, Any]) -> None:
+    console.rule(f"[bold blue]{title}")
+    console.print(graph["summary"])
+    table = Table(show_header=True, header_style="cyan")
+    table.add_column("Metric")
+    table.add_column("Value", justify="right")
+    table.add_row("Nodes", str(len(graph["nodes"])))
+    table.add_row("Edges", str(len(graph["edges"])))
+    table.add_row("Recommendations", str(len(graph["recommendations"])))
+    console.print(table)
+    if graph["recommendations"]:
+        for recommendation in graph["recommendations"]:
+            console.print(
+                f"[green]{recommendation.get('name')}:[/green] "
+                f"{recommendation.get('action', '')}"
+            )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -84,6 +103,11 @@ def main() -> None:
         action="store_true",
         help="Include the optional design tools and best practices section.",
     )
+    parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Run the original MVP tabular demo instead of graph-view projections.",
+    )
     args = parser.parse_args()
 
     load_dotenv()
@@ -94,6 +118,39 @@ def main() -> None:
 
     try:
         driver.verify_connectivity()
+        if not args.legacy:
+            views = GraphQueries(driver)
+            demonstrations = (
+                ("1. Protocol local view: OSPF", views.protocol_view("ospf")),
+                ("2. Protocol local view: BGP", views.protocol_view("bgp")),
+                (
+                    "3. Cross-protocol interaction: FHRP → OSPF",
+                    views.interaction_view("fhrp", "ospf"),
+                ),
+                (
+                    "4. Cross-protocol interaction: OSPF → BGP",
+                    views.interaction_view("ospf", "bgp"),
+                ),
+                (
+                    "5. Cross-protocol interaction: BGP → MPLS",
+                    views.interaction_view("bgp", "mpls"),
+                ),
+                (
+                    "6. Service dependency view: Payment-App",
+                    views.service_view("Payment-App"),
+                ),
+                (
+                    "7. Change blast radius: CHG-8821",
+                    views.change_view("CHG-8821"),
+                ),
+                (
+                    "8. Failure propagation: Ethernet1/49",
+                    views.failure_view("Ethernet1/49"),
+                ),
+            )
+            for title, graph in demonstrations:
+                print_graph_view(title, graph)
+            return
         run_section(
             1,
             "Overlay/Underlay RCA",

@@ -59,15 +59,13 @@ export NEO4J_PASSWORD=password123
 python src/demo.py
 ```
 
-The CLI prints four default sections:
+The default CLI prints eight bounded graph views: OSPF, BGP, the FHRP/OSPF,
+OSPF/BGP, and BGP/MPLS interaction boundaries, the Payment-App dependency
+chain, the CHG-8821 blast radius, and Ethernet1/49 failure propagation.
 
-- Overlay/Underlay RCA
-- Redistribution Impact Analysis
-- Evidence and Recommendation
-- Global Network Design KG
-
-The same questions are available as standalone Cypher in
-`cypher/demo_queries.cypher`.
+Use `python src/demo.py --legacy` for the original MVP and chapter-oriented
+tabular queries. Standalone Cypher remains available under `cypher/queries/`
+and in `cypher/demo_queries.cypher`.
 
 ## Network design ontology
 
@@ -168,5 +166,48 @@ is original to this project.
 - `docs/`: ontology format, protocol dependency model, and scenario narratives
 - `tests/`: ontology integrity and required relationship checks
 
-This milestone intentionally excludes agents, LangGraph, APIs, vector
-databases, full telemetry ingestion, and a frontend.
+This milestone intentionally excludes agents, LangGraph, vector databases,
+authentication, and full telemetry ingestion.
+
+## Modular graph API and visualization
+
+The repository now runs one unified Neo4j database with:
+
+- shared core ontology in `ontology/core.yaml`
+- protocol modules in `ontology/protocols/`
+- protocol-boundary modules in `ontology/interactions/`
+- FastAPI graph views in `src/api.py`
+- a static Cytoscape.js frontend in `frontend/`
+
+Install, seed, and start:
+
+```bash
+docker compose up -d
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python src/seed_loader.py
+python src/demo.py
+uvicorn src.api:app --reload
+```
+
+Open <http://localhost:8000>. API examples:
+
+```text
+GET /health
+GET /views/protocol/ospf
+GET /views/protocol/bgp
+GET /views/interaction/fhrp/ospf
+GET /views/interaction/ospf/bgp
+GET /views/interaction/bgp/mpls
+GET /views/service/Payment-App
+GET /views/failure/Ethernet1%2F49
+GET /views/change/CHG-8821
+GET /search?q=Payment
+```
+
+The original tabular demonstration remains available with:
+
+```bash
+python src/demo.py --legacy
+```

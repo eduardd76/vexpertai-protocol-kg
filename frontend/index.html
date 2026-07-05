@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vExpertAI Network Design KG</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>vExpertAI Network Design Knowledge Graph</h1>
+      <p>Protocol-local, interaction, service, failure, and change views.</p>
+    </header>
+    <main>
+      <section class="controls">
+        <label>
+          View
+          <select id="view-type">
+            <option value="protocol">Protocol local</option>
+            <option value="interaction">Cross-protocol interaction</option>
+            <option value="service">Service dependency</option>
+            <option value="failure">Failure propagation</option>
+            <option value="change">Change blast radius</option>
+            <option value="search">Search</option>
+          </select>
+        </label>
+        <label>
+          Primary input
+          <input id="primary-input" value="ospf" />
+        </label>
+        <label id="secondary-field" class="hidden">
+          Target protocol
+          <input id="secondary-input" value="bgp" />
+        </label>
+        <button id="load-view">Load graph</button>
+      </section>
+      <section class="workspace">
+        <div id="graph" aria-label="Knowledge graph visualization"></div>
+        <aside>
+          <section>
+            <h2>Selected node</h2>
+            <pre id="node-properties">Select a node.</pre>
+          </section>
+          <section>
+            <h2>Summary</h2>
+            <p id="summary">Load a graph view.</p>
+          </section>
+          <section>
+            <h2>Recommendations</h2>
+            <div id="recommendations">None.</div>
+          </section>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
