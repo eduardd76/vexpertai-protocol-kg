@@ -1,0 +1,235 @@
+ontology:
+  id: core
+  title: vExpertAI Network Design Core
+  version: 1.0.0
+  description: Shared operational, design, service, risk, evidence, and validation concepts.
+
+node_labels:
+  Site: Physical or logical operating location.
+  Device: Managed network or security system.
+  Interface: Physical or logical attachment point.
+  Link: Connection between interfaces.
+  PhysicalLink: Link with a physical failure mode.
+  VRF: Isolated routing context.
+  VLAN: Layer 2 broadcast segment.
+  Prefix: Semantically important IP reachability object.
+  Route: Summarized route lineage and state.
+  BGPRoute: BGP route with policy, path, and origin lineage.
+  VPNRoute: VPN reachability with import/export lineage.
+  Protocol: Generic network control or signaling protocol.
+  Policy: Generic configuration intent that permits, denies, modifies, or prioritizes behavior.
+  RoutingProtocolInstance: Generic protocol process.
+  BGPProcess: BGP protocol instance.
+  BGPNeighbor: BGP peering endpoint.
+  OSPFProcess: OSPF protocol instance.
+  EVPNControlPlane: EVPN route distribution domain.
+  VXLANOverlay: VXLAN data-plane overlay.
+  VTEP: VXLAN tunnel endpoint.
+  VNI: VXLAN network identifier.
+  UnderlayRouting: Summarized reachability supporting an overlay.
+  RouteMap: Ordered routing policy.
+  PrefixList: Prefix-based policy filter.
+  Community: BGP policy attribute.
+  RedistributionPolicy: Policy controlling routes imported or exported across protocol boundaries.
+  SummarizationPolicy: Policy reducing advertised prefix detail at an area or external boundary.
+  RedistributionRule: Policy boundary between routing domains.
+  FirewallRule: Security policy statement.
+  SecurityPolicy: Generic policy controlling permitted application traffic.
+  Application: Deployed application capability.
+  BusinessService: Business-facing service.
+  Requirement: Stakeholder need expressed in testable terms.
+  Constraint: Boundary an option must not violate.
+  Risk: Potential adverse outcome of an option, decision, or migration.
+  Alert: Operational observation requiring attention.
+  Symptom: Interpreted failure manifestation.
+  Incident: Correlated operational disruption.
+  Change: Controlled modification to the environment.
+  Evidence: Summarized fact with a pointer to its source.
+  Recommendation: Proposed safe action.
+  ValidationRun: Execution of checks before or after a change.
+  CustomerEdge: Customer router attached to provider VPN.
+  ProviderEdge: Provider router holding VRFs and VPN routes.
+  RouteTarget: VPN route import or export policy identifier.
+  RouteDistinguisher: Identifier making VPN routes globally unique.
+  MPLSL3VPN: Provider L3 VPN using VRFs and MP-BGP.
+  MPLSL2VPN: Provider Layer 2 VPN service.
+  LSP: Domain-qualified protocol object; use ISISLSP or MPLSLSP to disambiguate its meaning.
+  FastReroute: Local protection behavior using a precomputed alternate.
+  IGPReachability: IGP or underlay reachability to a BGP next hop.
+  InternetEdge: Internet connectivity and policy boundary.
+  OverlayService: Generic service layered over routed or label-switched transport.
+  ControlPlaneDependency: Reified dependency on routing, signaling, discovery, or policy state.
+  DataPlaneDependency: Reified dependency on forwarding, interface, label, tunnel, or queue state.
+  ServiceOwner: Team or role accountable for a service, requirement, policy, or risk.
+  UserGroup: Users sharing an access location and service need.
+  DesignDomain: Bounded network design subject.
+  DesignObjective: Measurable desired outcome.
+  DesignConstraint: Non-negotiable design boundary.
+  DesignDecision: Selected approach with rationale.
+  DesignOption: Candidate approach considered by a decision.
+  Tradeoff: Explicit benefit and cost comparison.
+  DesignRisk: Potential adverse design outcome.
+  FailureDomain: Scope affected by a shared failure.
+  ValidationCheck: Testable design or operational assertion.
+
+properties:
+  "*":
+    id: {type: string, required: true, description: Stable semantic identifier.}
+    name: {type: string, required: true, description: Human-readable name.}
+    dataset: {type: string, required: false, description: Loader ownership marker.}
+  Evidence:
+    summary: {type: string, required: true}
+    source: {type: string, required: true}
+  DesignDecision:
+    rationale: {type: string, required: true}
+    status: {type: string, required: true}
+  DesignRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+  ValidationCheck:
+    expected_result: {type: string, required: true}
+  ControlPlaneDependency:
+    status: {type: string, required: true}
+  DataPlaneDependency:
+    status: {type: string, required: true}
+  ServiceOwner:
+    team: {type: string, required: true}
+
+relationship_types:
+  HAS_INTERFACE: {from: [Device], to: [Interface], description: Device owns interface.}
+  CONNECTED_TO: {from: [Interface], to: [Interface], description: Interfaces have direct adjacency.}
+  HAS_ENDPOINT: {from: [Link, PhysicalLink, VPNService, OverlayTunnel], to: [Interface, CustomerEdge, ProviderEdge, Hub, Spoke, Site], description: Link, VPN, or tunnel terminates on its endpoint.}
+  LOCATED_IN: {from: [Device, UserGroup], to: [Site], description: Managed object or user group resides at site.}
+  RUNS: {from: [Device], to: [RoutingProtocolInstance, BGPProcess, OSPFProcess, ISISProcess, EIGRPProcess, LabelDistributionProcess], description: Device hosts protocol process.}
+  HAS_NEIGHBOR: {from: [BGPProcess], to: [BGPNeighbor], description: BGP process owns neighbor.}
+  ADVERTISES: {from: [BGPProcess, OSPFProcess, TLV, ISISTLV], to: [Prefix, Capability], description: Protocol object advertises reachability or capability.}
+  REDISTRIBUTES_TO: {from: [OSPFProcess, EIGRPProcess, RoutingProtocolInstance], to: [BGPProcess, RoutingProtocolInstance], description: Routes cross a protocol boundary.}
+  CONTROLLED_BY: {from: [RedistributionRule, RedistributionPolicy], to: [RouteMap], description: Policy controls redistribution.}
+  REFERENCES: {from: [RouteMap], to: [PrefixList], description: Route-map evaluates prefix-list.}
+  SETS: {from: [RouteMap], to: [Community], description: Policy applies attribute.}
+  SUPPORTS: {from: [Prefix, DesignDecision], to: [BusinessService, DesignObjective], description: Source enables target.}
+  DEPENDS_ON:
+    from: [BusinessService, Application, VXLANOverlay, EVPNControlPlane, VTEP, UnderlayRouting, DesignDecision, DesignObjective, VPNService, LabelSwitchedPath, LSP, MPLSService, MPLSL3VPN, Pseudowire, LDPAdjacency, TrafficEngineeringTunnel, ServiceOverlay, MulticastDomain, SegmentRoutingPolicy, MigrationStep, Route, Reachability, OSPFConvergence, SegmentRouting, MPLSOverlay, SegmentRoutingOverlay, ISISUnderlay, HubSpokeReachability, IPsecTunnel, TunnelHealth, BGPNextHop, HotPotatoRouting, ColdPotatoRouting, ServiceReachability, PIMSparseMode, PIMSSM, RPFCheck, MulticastRoute, MulticastApplication, AnycastRP]
+    to: [Application, VRF, VLAN, VNI, Prefix, IPv6Prefix, VXLANOverlay, EVPNControlPlane, VTEP, UnderlayRouting, PhysicalLink, DesignDecision, DesignConstraint, VPNService, WANTransport, QoSPolicy, MPLSDomain, MPLSService, RendezvousPoint, MigrationStep, LSA, OSPFNeighbor, SPFComputation, ISISAdjacency, SegmentRoutingExtension, ISISUnderlay, Reachability, MPLSOverlay, SegmentRoutingOverlay, HubRouter, HubSpokeReachability, DMVPNOverlay, UnderlayTransport, IKEPolicy, IKEState, RoutingState, IGPMetricToExit, PolicyPreference, IGPReachability, BGPRoute, SelectedBGPPath, ServiceReachability, SourceSpecificJoin, UnicastRoutingTable, PIMNeighbor, MulticastGroup, MSDP, SharedState, MulticastApplication, SLARequirement, LSP, LabelSwitchedPath, LabelBinding, RouteDistinguisher, RouteTarget, MPBGPVPNv4, MPBGPVPNv6, TargetedLDP, L2VPNSignaling, RSVPTE, IGPTEExtensions, TransportUnderlay, ServiceOverlay, Pseudowire, LDP]
+    description: Target is required for source to operate or succeed.
+  OBSERVED_ON: {from: [Alert, Evidence], to: [Device, Interface, VXLANOverlay], description: Observation location.}
+  INDICATES: {from: [Alert], to: [Symptom], description: Alert implies interpreted symptom.}
+  CONTAINS: {from: [Incident, OSPFProcess, OSPFArea, ISISArea], to: [Alert, OSPFArea, OSPFInterface, Device], description: Source owns or groups target within its semantic scope.}
+  IMPACTS: {from: [Incident, DesignRisk, Risk, VPNRisk, BGPPathRisk, MulticastRisk, QoSRisk, OversubscriptionRisk, Layer2Risk, TechnologyAddition, OSPFAdjacencyRisk, ISISAdjacencyRisk], to: [BusinessService, FailureDomain, ExistingProtocol], description: Source affects target.}
+  MODIFIES: {from: [Change], to: [RouteMap, PrefixList, RoutePolicy, DesignDecision, EIGRPMetric, Delay, Bandwidth, Reliability, Load, MTU, IGPMetricToExit, PolicyPreference], description: Change alters semantic object.}
+  AFFECTS: {from: [Change, CongestionEvent], to: [BusinessService, Application, Prefix, Risk, DesignRisk, InterfaceQueue], description: Change or operational event has downstream effect.}
+  BASED_ON: {from: [Recommendation, DesignDecision], to: [Evidence], description: Conclusion is supported by evidence.}
+  TESTS: {from: [ValidationRun], to: [Recommendation, ValidationCheck], description: Run executes proposed validation.}
+  HAS_OBJECTIVE: {from: [DesignDomain], to: [DesignObjective], description: Domain owns objective.}
+  HAS_CONSTRAINT: {from: [DesignDomain], to: [DesignConstraint], description: Domain is bounded by constraint.}
+  CONSIDERS: {from: [DesignDecision], to: [DesignOption], description: Decision evaluates option.}
+  SELECTS: {from: [DesignDecision], to: [DesignOption], description: Decision chooses option.}
+  HAS_TRADEOFF: {from: [DesignOption, DesignDecision], to: [Tradeoff], description: Option or decision carries tradeoff.}
+  INTRODUCES_RISK: {from: [DesignDecision, DesignOption, Change], to: [DesignRisk, Risk], description: Source creates or increases risk.}
+  MITIGATED_BY: {from: [DesignRisk, Risk], to: [DesignDecision, Recommendation, ValidationCheck, Control], description: Target reduces risk.}
+  VALIDATED_BY: {from: [DesignDecision, DesignObjective, DesignRisk, Risk, Recommendation, IntegrationPhase, Assumption], to: [ValidationCheck, ValidationRun], description: Target verifies assertion or mitigation.}
+  HAS_FAILURE_DOMAIN: {from: [DesignDomain, DesignDecision], to: [FailureDomain], description: Design defines blast radius.}
+  SUPPORTED_BY: {from: [Incident], to: [Evidence], description: Evidence supports incident conclusion.}
+  HAS_CONTROL_PLANE_DEPENDENCY:
+    from: [OverlayService, BusinessService, Application]
+    to: [ControlPlaneDependency]
+    description: Source uses a reified control-plane dependency with explicit state and evidence.
+  HAS_DATA_PLANE_DEPENDENCY:
+    from: [OverlayService, BusinessService, Application]
+    to: [DataPlaneDependency]
+    description: Source uses a reified forwarding dependency with explicit state and evidence.
+  DEPENDS_ON_COMPONENT:
+    from: [ControlPlaneDependency, DataPlaneDependency]
+    to: [Device, Interface, PhysicalLink, VLAN, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, RedistributionRule, RouteMap, PrefixList, MPLSService, MPLSL3VPN, MPLSL2VPN, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass]
+    description: Reified dependency resolves to the concrete network or policy component.
+  SUPPORTS_LAYER:
+    from: [Interface, PhysicalLink, VLAN, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, MPLSService, MPLSL3VPN, MPLSL2VPN, OverlayService, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass, Application, Prefix]
+    to: [VLAN, DefaultGateway, RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess, MPLSService, MPLSL3VPN, MPLSL2VPN, OverlayService, VXLANOverlay, VPNService, DMVPN, SegmentRoutingPolicy, CarrierEthernetService, FirewallRule, SecurityPolicy, QoSPolicy, QoSClass, Application, BusinessService]
+    description: Lower layer or policy enables the next layer in an end-to-end service chain.
+  OWNED_BY:
+    from: [BusinessService, Application, Requirement, Risk, Policy, SecurityPolicy, QoSPolicy]
+    to: [ServiceOwner]
+    description: Accountable team or role owns the semantic object.
+  HAS_SLA: {from: [BusinessService], to: [SLARequirement], description: Service is governed by measurable performance requirement.}
+  USES_ACCESS_INTERFACE: {from: [UserGroup], to: [Interface], description: User group enters the network through access interface.}
+  HAS_SOURCE_PROTOCOL: {from: [RedistributionRule], to: [RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], description: Redistribution rule identifies route source protocol.}
+  HAS_TARGET_PROTOCOL: {from: [RedistributionRule], to: [RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], description: Redistribution rule identifies route target protocol.}
+  APPLIES_TO_PREFIX: {from: [RedistributionRule, RouteMap, PrefixList, Policy], to: [Prefix], description: Policy or rule applies to semantic prefix.}
+  EVIDENCES: {from: [Evidence], to: [Change, Prefix, Policy, PrefixList, ControlPlaneDependency, DataPlaneDependency], description: Evidence supports a change, policy, prefix, or dependency conclusion.}
+  PROTECTS:
+    from: [QoSPolicy, PriorityQueue, FastReroute, BPDUGuard, RootGuard, LoopGuard, FeasibleSuccessorRoute, IPsecTunnel, VPNFailoverPolicy, BGPPIC]
+    to: [BusinessService, SLAObjective, VoiceTraffic, LSP, LabelSwitchedPath, AccessPort, STPRootPlacement, UnidirectionalLinkFailure, Prefix, EncryptionDomain, VPNService, NextHop, NextHopFailure]
+    description: Source control protects the target from a defined failure or performance risk.
+
+constraints:
+  - {label: Device, property: id, type: unique}
+  - {label: Interface, property: id, type: unique}
+  - {label: Prefix, property: id, type: unique}
+  - {label: BusinessService, property: id, type: unique}
+  - {label: DesignDomain, property: id, type: unique}
+  - {label: DesignDecision, property: id, type: unique}
+  - {label: DesignRisk, property: id, type: unique}
+  - {label: Evidence, property: id, type: unique}
+  - {label: ValidationCheck, property: id, type: unique}
+  - {label: Protocol, property: id, type: unique}
+  - {label: Policy, property: id, type: unique}
+  - {label: OverlayService, property: id, type: unique}
+  - {label: ControlPlaneDependency, property: id, type: unique}
+  - {label: DataPlaneDependency, property: id, type: unique}
+  - {label: ServiceOwner, property: id, type: unique}
+  - {label: UserGroup, property: id, type: unique}
+
+dependency_rules:
+  - id: service-dependency-must-be-explicit
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [Application, VRF, VNI, Prefix, VXLANOverlay]
+    rationale: Service impact requires an explicit path to infrastructure or reachability.
+  - id: decision-risk-validation-chain
+    source: DesignDecision
+    relationship: INTRODUCES_RISK
+    target: [DesignRisk]
+    rationale: Material decisions expose their risks, which can then be mitigated and validated.
+  - id: overlay-control-plane-pattern
+    source: OverlayService
+    relationship: HAS_CONTROL_PLANE_DEPENDENCY
+    target: [ControlPlaneDependency]
+    rationale: Overlay control-plane state is represented consistently across technologies.
+  - id: overlay-data-plane-pattern
+    source: OverlayService
+    relationship: HAS_DATA_PLANE_DEPENDENCY
+    target: [DataPlaneDependency]
+    rationale: Overlay forwarding state is represented consistently across technologies.
+
+risk_rules:
+  - id: unvalidated-high-risk-decision
+    applies_to: DesignRisk
+    when: severity is high and no VALIDATED_BY or MITIGATED_BY relationship exists
+    severity: high
+    response: Block implementation until a validation check and mitigation are linked.
+  - id: failed-critical-dependency
+    applies_to: ControlPlaneDependency
+    when: status is failed and the dependency supports a critical business service
+    severity: critical
+    response: Follow evidence to the failed component and validate a bounded remediation.
+
+validation_queries:
+  - id: core-unmitigated-risks
+    description: Find high risks with no mitigation.
+    cypher: |
+      MATCH (risk:DesignRisk)
+      WHERE risk.severity = 'high' AND NOT (risk)-[:MITIGATED_BY]->()
+      RETURN risk.id, risk.name
+  - id: global-overlay-dependency-gaps
+    description: Find overlay services without explicit control-plane or data-plane dependency patterns.
+    cypher: |
+      MATCH (overlay:OverlayService)
+      WHERE NOT (overlay)-[:HAS_CONTROL_PLANE_DEPENDENCY]->()
+         OR NOT (overlay)-[:HAS_DATA_PLANE_DEPENDENCY]->()
+      RETURN overlay.id, overlay.name
+
+example_scenarios:
+  - id: design-decision-review
+    summary: Review objectives, constraints, tradeoffs, risks, evidence, and validation before implementation.
+  - id: end-to-end-payment-service
+    summary: Trace Payment-App from physical access through routing, overlay, security, QoS, application, SLA, risk, and ownership.

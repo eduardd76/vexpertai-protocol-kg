@@ -1,0 +1,258 @@
+ontology:
+  id: chapter-09-multicast
+  title: Multicast Design
+  version: 2.0.0
+  description: Receiver membership, PIM trees, rendezvous-point mapping, source-specific joins, reverse-path forwarding, boundaries, resiliency, and service impact.
+
+node_labels:
+  MulticastDomain: Bounded multicast control and forwarding domain.
+  MulticastGroup: Group address with application and policy meaning.
+  Source: Producer address for multicast traffic.
+  Receiver: Endpoint subscribing to multicast traffic.
+  MulticastSource: Compatibility label for a multicast source.
+  MulticastReceiver: Compatibility label for a multicast receiver.
+  IGMP: Receiver-membership signaling process.
+  IGMPVersion: IGMP protocol version and behavior.
+  PIMProcess: Protocol Independent Multicast routing process.
+  PIMDenseMode: Flood-and-prune PIM forwarding mode.
+  PIMSparseMode: Rendezvous-point-based PIM forwarding mode.
+  PIMSSM: Source-specific multicast PIM mode.
+  PIMBidir: Bidirectional shared-tree PIM mode.
+  RendezvousPoint: Shared-tree rendezvous function.
+  RPMapping: Group-range-to-RP mapping and summarized state.
+  BootstrapRouter: Bootstrap mechanism distributing RP candidates.
+  AutoRP: Cisco Auto-RP discovery and announcement mechanism.
+  SharedTree: Receiver-to-RP multicast tree.
+  SourceTree: Shortest-path tree rooted at a source.
+  MulticastTree: Generic multicast distribution tree.
+  RPFCheck: Reverse-path-forwarding validation for a source or RP.
+  RPFInterface: Interface selected toward a source or RP.
+  UnicastRoutingTable: Unicast routing context used for RPF selection.
+  UnicastRoute: Summarized unicast route controlling RPF resolution.
+  MulticastRoute: Semantic multicast forwarding state for a source and group.
+  OIL: Outgoing interface list for multicast forwarding state.
+  PIMNeighbor: PIM adjacency required to build and maintain multicast state.
+  MulticastBoundary: Policy boundary limiting multicast group scope.
+  AnycastRP: Redundant rendezvous-point address implemented by multiple routers.
+  MSDP: Multicast Source Discovery Protocol state synchronization.
+  SharedState: Shared source-active or RP synchronization state.
+  SourceSpecificJoin: Receiver request for one source and one group.
+  ReceiverMembership: Summarized IGMP membership state.
+  MulticastApplication: Application consuming one or more multicast groups.
+  IPTVService: Multicast application delivering television content.
+  MarketDataService: Low-latency multicast market-data application.
+  RPFPolicy: Reverse-path forwarding selection intent.
+  MulticastRisk: Risk caused by membership, RP, RPF, tree, adjacency, or boundary state.
+
+properties:
+  MulticastGroup:
+    group_address: {type: string, required: true}
+  Source:
+    address: {type: string, required: true}
+  Receiver:
+    address: {type: string, required: true}
+  IGMPVersion:
+    version: {type: string, required: true}
+  PIMProcess:
+    mode: {type: string, required: true}
+  RendezvousPoint:
+    address: {type: string, required: true}
+  RPMapping:
+    state: {type: string, required: true}
+  RPFCheck:
+    state: {type: string, required: true}
+  MulticastRoute:
+    state: {type: string, required: true}
+  PIMNeighbor:
+    state: {type: string, required: true}
+  MulticastBoundary:
+    action: {type: string, required: true}
+  MulticastRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+
+relationship_types:
+  USES_RP: {from: [MulticastDomain, PIMSparseMode, PIMBidir], to: [RendezvousPoint, AnycastRP], description: Multicast domain or PIM mode uses rendezvous function.}
+  SENDS_TO: {from: [Source, MulticastSource], to: [MulticastGroup], description: Source transmits traffic to group.}
+  JOINS: {from: [Receiver, MulticastReceiver], to: [MulticastGroup], description: Receiver subscribes to group.}
+  SIGNALS: {from: [IGMP], to: [Receiver, MulticastReceiver, ReceiverMembership], description: IGMP signals receiver membership.}
+  BUILDS: {from: [PIMProcess, PIMDenseMode, PIMSparseMode, PIMSSM, PIMBidir], to: [MulticastTree, SharedTree, SourceTree], description: PIM mode builds distribution tree.}
+  HAS_VERSION: {from: [IGMP], to: [IGMPVersion], description: Membership process uses IGMP version.}
+  RUNS_PIM: {from: [MulticastDomain], to: [PIMProcess, PIMDenseMode, PIMSparseMode, PIMSSM, PIMBidir], description: Domain runs multicast routing mode.}
+  HAS_RP_MAPPING: {from: [MulticastDomain, PIMSparseMode, PIMBidir], to: [RPMapping], description: Domain or mode resolves group-to-RP mapping.}
+  MAPS_GROUP: {from: [RPMapping], to: [MulticastGroup], description: RP mapping covers group or group range.}
+  MAPS_TO_RP: {from: [RPMapping], to: [RendezvousPoint, AnycastRP], description: Mapping resolves group range to rendezvous point.}
+  DISTRIBUTES_RP_MAPPING: {from: [BootstrapRouter, AutoRP], to: [RPMapping], description: Discovery mechanism distributes RP mapping.}
+  HAS_TREE: {from: [MulticastRoute, MulticastGroup], to: [MulticastTree, SharedTree, SourceTree], description: Forwarding state or group uses tree.}
+  HAS_RPF_CHECK: {from: [MulticastRoute], to: [RPFCheck], description: Multicast route is admitted by reverse-path check.}
+  USES_RPF_INTERFACE: {from: [RPFCheck], to: [RPFInterface], description: Reverse-path check selects incoming interface.}
+  CONTAINS_UNICAST_ROUTE: {from: [UnicastRoutingTable], to: [UnicastRoute], description: Routing table contains summarized route used for RPF.}
+  USES_UNICAST_ROUTE: {from: [RPFCheck], to: [UnicastRoute], description: Reverse-path check resolves through unicast route.}
+  HAS_OIL: {from: [MulticastRoute], to: [OIL], description: Multicast forwarding state has outgoing interface list.}
+  FORWARDS_TO: {from: [OIL, MulticastRoute], to: [Interface, Receiver, MulticastReceiver], description: Multicast state forwards toward interface or receiver.}
+  HAS_PIM_NEIGHBOR: {from: [PIMProcess, PIMDenseMode, PIMSparseMode, PIMSSM, PIMBidir], to: [PIMNeighbor], description: PIM process owns adjacency.}
+  SPECIFIES_SOURCE: {from: [SourceSpecificJoin], to: [Source, MulticastSource], description: Source-specific join selects source.}
+  TARGETS_GROUP: {from: [SourceSpecificJoin, ReceiverMembership], to: [MulticastGroup], description: Membership or source-specific join targets group.}
+  SYNCHRONIZES_WITH: {from: [AnycastRP], to: [MSDP, SharedState], description: Anycast RP synchronizes source-active or shared state.}
+  USES_RPF_POLICY: {from: [MulticastDomain], to: [RPFPolicy], description: Domain applies reverse-path intent.}
+  SERVES_MULTICAST: {from: [MulticastGroup], to: [BusinessService], description: Group directly supports business service.}
+  SUPPORTS_MULTICAST_STATE: {from: [Evidence], to: [Receiver, ReceiverMembership, RPMapping, RPFCheck, PIMNeighbor, MulticastBoundary], description: Evidence supports multicast diagnostic state.}
+  EXPOSES_MULTICAST_RISK: {from: [MulticastDomain, MulticastGroup, RPMapping, RPFCheck, MulticastRoute, MulticastBoundary, PIMNeighbor], to: [MulticastRisk], description: Multicast object exposes service or forwarding risk.}
+
+constraints:
+  - {label: MulticastDomain, property: id, type: unique}
+  - {label: MulticastGroup, property: id, type: unique}
+  - {label: Source, property: id, type: unique}
+  - {label: Receiver, property: id, type: unique}
+  - {label: MulticastSource, property: id, type: unique}
+  - {label: MulticastReceiver, property: id, type: unique}
+  - {label: IGMP, property: id, type: unique}
+  - {label: IGMPVersion, property: id, type: unique}
+  - {label: PIMProcess, property: id, type: unique}
+  - {label: PIMDenseMode, property: id, type: unique}
+  - {label: PIMSparseMode, property: id, type: unique}
+  - {label: PIMSSM, property: id, type: unique}
+  - {label: PIMBidir, property: id, type: unique}
+  - {label: RendezvousPoint, property: id, type: unique}
+  - {label: RPMapping, property: id, type: unique}
+  - {label: BootstrapRouter, property: id, type: unique}
+  - {label: AutoRP, property: id, type: unique}
+  - {label: SharedTree, property: id, type: unique}
+  - {label: SourceTree, property: id, type: unique}
+  - {label: MulticastTree, property: id, type: unique}
+  - {label: RPFCheck, property: id, type: unique}
+  - {label: RPFInterface, property: id, type: unique}
+  - {label: UnicastRoutingTable, property: id, type: unique}
+  - {label: UnicastRoute, property: id, type: unique}
+  - {label: MulticastRoute, property: id, type: unique}
+  - {label: OIL, property: id, type: unique}
+  - {label: PIMNeighbor, property: id, type: unique}
+  - {label: MulticastBoundary, property: id, type: unique}
+  - {label: AnycastRP, property: id, type: unique}
+  - {label: MSDP, property: id, type: unique}
+  - {label: SharedState, property: id, type: unique}
+  - {label: SourceSpecificJoin, property: id, type: unique}
+  - {label: ReceiverMembership, property: id, type: unique}
+  - {label: MulticastApplication, property: id, type: unique}
+  - {label: IPTVService, property: id, type: unique}
+  - {label: MarketDataService, property: id, type: unique}
+  - {label: RPFPolicy, property: id, type: unique}
+  - {label: MulticastRisk, property: id, type: unique}
+
+dependency_rules:
+  - id: receiver-group-membership
+    source: Receiver
+    relationship: JOINS
+    target: [MulticastGroup]
+    rationale: Receiver reachability starts with explicit group membership.
+  - id: igmp-receiver-membership
+    source: IGMP
+    relationship: SIGNALS
+    target: [Receiver, ReceiverMembership]
+    rationale: IGMP state distinguishes receiver signaling from routed-tree failure.
+  - id: pim-tree-construction
+    source: PIMProcess
+    relationship: BUILDS
+    target: [MulticastTree]
+    rationale: PIM adjacency and policy construct the distribution tree.
+  - id: sparse-mode-rp
+    source: PIMSparseMode
+    relationship: DEPENDS_ON
+    target: [RendezvousPoint]
+    rationale: Sparse-mode shared-tree discovery requires a valid RP.
+  - id: ssm-source-specific-join
+    source: PIMSSM
+    relationship: DEPENDS_ON
+    target: [SourceSpecificJoin]
+    rationale: SSM forwarding requires the receiver to name source and group.
+  - id: rpf-unicast-table
+    source: RPFCheck
+    relationship: DEPENDS_ON
+    target: [UnicastRoutingTable]
+    rationale: RPF selects its incoming path from unicast routing state.
+  - id: multicast-route-pim-neighbor
+    source: MulticastRoute
+    relationship: DEPENDS_ON
+    target: [PIMNeighbor]
+    rationale: Multicast state may require an upstream PIM adjacency.
+  - id: application-group
+    source: MulticastApplication
+    relationship: DEPENDS_ON
+    target: [MulticastGroup]
+    rationale: Application impact traces to required multicast groups.
+  - id: anycast-rp-state
+    source: AnycastRP
+    relationship: DEPENDS_ON
+    target: [MSDP, SharedState]
+    rationale: Anycast RP nodes require source-active or equivalent shared state.
+  - id: boundary-group-filter
+    source: MulticastBoundary
+    relationship: FILTERS
+    target: [MulticastGroup]
+    rationale: Boundary policy determines whether a group crosses a scope.
+  - id: business-multicast-application
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [MulticastApplication]
+    rationale: Business impact follows the multicast application dependency.
+
+risk_rules:
+  - id: rpf-failure-after-join
+    applies_to: RPFCheck
+    when: receiver membership is active but source traffic fails reverse-path validation
+    severity: critical
+    response: Repair the unicast route or selected RPF interface before changing IGMP.
+  - id: missing-sparse-rp-mapping
+    applies_to: RPMapping
+    when: sparse-mode group has no usable group-to-RP mapping
+    severity: high
+    response: Restore RP mapping distribution and verify registration and joins.
+  - id: incomplete-ssm-source-join
+    applies_to: SourceSpecificJoin
+    when: one required source-specific join is missing or denied
+    severity: high
+    response: Validate IGMPv3 source membership and source reachability.
+  - id: boundary-filters-required-group
+    applies_to: MulticastBoundary
+    when: deny range overlaps a business-required multicast group
+    severity: critical
+    response: Correct boundary scope and validate that only intended groups cross.
+  - id: pim-neighbor-service-impact
+    applies_to: PIMNeighbor
+    when: failed adjacency owns multicast state for a critical application
+    severity: critical
+    response: Restore adjacency and validate tree and OIL reconstruction.
+
+validation_queries:
+  - id: joined-receiver-with-failed-rpf
+    description: Find joined receivers whose multicast route fails RPF.
+    cypher: |
+      MATCH (receiver:Receiver)-[:JOINS]->(group:MulticastGroup)
+      MATCH (route:MulticastRoute)-[:HAS_RPF_CHECK]->(check:RPFCheck {state: 'failed'})
+      MATCH (route)-[:HAS_TREE]->(:MulticastTree)<-[:HAS_TREE]-(group)
+      RETURN receiver.id, group.group_address, check.name
+  - id: sparse-group-without-rp
+    description: Find sparse-mode mappings with no usable RP.
+    cypher: |
+      MATCH (mode:PIMSparseMode)-[:HAS_RP_MAPPING]->(mapping:RPMapping)
+      WHERE mapping.state <> 'active' OR NOT (mapping)-[:MAPS_TO_RP]->()
+      RETURN mode.id, mapping.id, mapping.state
+  - id: application-on-failed-pim-neighbor
+    description: Find multicast applications whose route depends on a failed PIM neighbor.
+    cypher: |
+      MATCH (application:MulticastApplication)-[:DEPENDS_ON]->(group:MulticastGroup)
+      MATCH (route:MulticastRoute)-[:DEPENDS_ON]->(neighbor:PIMNeighbor {state: 'down'})
+      WHERE route.group_address = group.group_address
+      RETURN application.id, group.group_address, neighbor.name
+
+example_scenarios:
+  - id: receiver-rpf-failure
+    summary: Receiver membership succeeds but traffic fails reverse-path validation.
+  - id: sparse-rp-mapping-missing
+    summary: Sparse-mode group has no usable RP mapping.
+  - id: partial-ssm-source-reachability
+    summary: One SSM source-specific join forwards while another fails.
+  - id: multicast-boundary-filter
+    summary: Boundary policy denies a group required by an application.
+  - id: market-data-pim-adjacency
+    summary: PIM adjacency loss removes market-data multicast state.

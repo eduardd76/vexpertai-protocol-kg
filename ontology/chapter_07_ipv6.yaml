@@ -1,0 +1,46 @@
+ontology:
+  id: chapter-07-ipv6
+  title: IPv6 Design
+  version: 1.0.0
+  description: Address planning, dual stack, transition, neighbor discovery, and policy parity.
+node_labels:
+  IPv6AddressPlan: Hierarchical allocation and aggregation intent.
+  IPv6Prefix: Semantically important IPv6 reachability object.
+  IPv6TransitionMechanism: Coexistence or translation approach.
+  NeighborDiscoveryDomain: Scope of IPv6 neighbor discovery.
+  FirstHopSecurityPolicy: Controls router advertisements and neighbor discovery.
+properties:
+  IPv6Prefix:
+    cidr: {type: string, required: true}
+  IPv6TransitionMechanism:
+    mechanism: {type: string, required: true}
+relationship_types:
+  ALLOCATES: {from: [IPv6AddressPlan, QueuingPolicy], to: [IPv6Prefix, BandwidthGuarantee], description: Design policy assigns a bounded address or bandwidth resource.}
+  TRANSITIONS_WITH: {from: [DesignDecision], to: [IPv6TransitionMechanism], description: Decision selects coexistence mechanism.}
+  HAS_ND_DOMAIN: {from: [VLAN], to: [NeighborDiscoveryDomain], description: VLAN bounds neighbor discovery.}
+  PROTECTED_BY: {from: [NeighborDiscoveryDomain], to: [FirstHopSecurityPolicy], description: Security policy protects first hop.}
+constraints:
+  - {label: IPv6Prefix, property: id, type: unique}
+  - {label: IPv6AddressPlan, property: id, type: unique}
+dependency_rules:
+  - id: ipv6-service-prefix
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [IPv6Prefix]
+    rationale: IPv6 service reachability must be modeled independently of IPv4.
+risk_rules:
+  - id: ipv6-policy-parity-gap
+    applies_to: IPv6TransitionMechanism
+    when: IPv6 forwarding is enabled without equivalent routing and security policy
+    severity: high
+    response: Validate feature and policy parity before enabling production traffic.
+validation_queries:
+  - id: ipv6-prefixes-without-plan
+    description: Find important IPv6 prefixes not allocated by an address plan.
+    cypher: |
+      MATCH (prefix:IPv6Prefix)
+      WHERE NOT (:IPv6AddressPlan)-[:ALLOCATES]->(prefix)
+      RETURN prefix.id, prefix.cidr
+example_scenarios:
+  - id: dual-stack-enterprise
+    summary: Introduce IPv6 while preserving security controls and summarizable addressing.

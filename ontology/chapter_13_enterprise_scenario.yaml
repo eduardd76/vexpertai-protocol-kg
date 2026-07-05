@@ -1,0 +1,46 @@
+ontology:
+  id: chapter-13-enterprise-scenario
+  title: Enterprise Network Design Scenario
+  version: 1.0.0
+  description: Original end-to-end enterprise model spanning campus, branches, WAN, internet, cloud, and security.
+node_labels:
+  EnterpriseCampus: Campus location and access-distribution-core domain.
+  BranchSite: Remote enterprise site.
+  WANTransport: Provider or private wide-area transport.
+  SecurityZone: Group of assets sharing security policy.
+properties:
+  WANTransport:
+    transport_type: {type: string, required: true}
+  SecurityZone:
+    trust_level: {type: string, required: true}
+relationship_types:
+  CONNECTS_SITE: {from: [WANTransport], to: [Site, BranchSite, EnterpriseCampus], description: Transport connects location.}
+  HAS_INTERNET_EDGE: {from: [Site, EnterpriseCampus], to: [InternetEdge], description: Location uses internet boundary.}
+  IN_SECURITY_ZONE: {from: [Application, BusinessService, Interface], to: [SecurityZone], description: Object belongs to security zone.}
+  GOVERNED_BY_FIREWALL: {from: [SecurityZone], to: [FirewallRule], description: Zone traffic follows rule.}
+  USES_TRANSPORT: {from: [BusinessService], to: [WANTransport], description: Service depends on WAN transport.}
+constraints:
+  - {label: WANTransport, property: id, type: unique}
+  - {label: SecurityZone, property: id, type: unique}
+dependency_rules:
+  - id: enterprise-service-transport
+    source: BusinessService
+    relationship: USES_TRANSPORT
+    target: [WANTransport]
+    rationale: End-to-end service impact includes the selected WAN transport.
+risk_rules:
+  - id: enterprise-single-egress
+    applies_to: InternetEdge
+    when: critical internet-dependent services have one site-level egress
+    severity: high
+    response: Document accepted failure mode or add diverse egress and policy validation.
+validation_queries:
+  - id: critical-services-without-transport
+    description: Find critical services with no WAN transport dependency.
+    cypher: |
+      MATCH (service:BusinessService {criticality: 'critical'})
+      WHERE NOT (service)-[:USES_TRANSPORT]->()
+      RETURN service.id, service.name
+example_scenarios:
+  - id: global-enterprise-refresh
+    summary: Select campus, WAN, internet, segmentation, routing, and QoS designs from service requirements.

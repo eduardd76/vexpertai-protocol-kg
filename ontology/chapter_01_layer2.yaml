@@ -1,0 +1,253 @@
+ontology:
+  id: chapter-01-layer2
+  title: Layer 2 Design
+  version: 2.0.0
+  description: Ethernet segmentation, VLAN transport, STP, loop protection, link aggregation, FHRP, and access design tradeoffs.
+node_labels:
+  EthernetSegment: Shared Ethernet forwarding segment.
+  Switch: Device performing Layer 2 forwarding.
+  BridgeDomain: Bounded MAC learning and flooding domain.
+  Trunk: Interface carrying multiple tagged VLANs.
+  AccessPort: Edge interface assigned to one data VLAN.
+  PortChannel: Logical interface composed of member interfaces.
+  LAG: Link aggregation control and forwarding group.
+  MLAG: Multichassis link aggregation domain.
+  STPInstance: Spanning-tree calculation for one VLAN set.
+  STPRegion: Shared multiple-spanning-tree configuration region.
+  STPRootBridge: Elected root role for an STP instance.
+  STPBlockedPort: Port placed in a non-forwarding state by STP.
+  BPDU: Summarized spanning-tree protocol message.
+  PortFast: Edge-port rapid transition control.
+  RootGuard: Control preventing unexpected root placement.
+  LoopGuard: Control preventing alternate ports from incorrectly forwarding.
+  BPDUGuard: Control shutting an edge port after a BPDU.
+  BPDUFilter: Control suppressing BPDU transmission or reception.
+  VTPDomain: VLAN distribution administrative domain.
+  NativeVLAN: Untagged VLAN behavior on a trunk.
+  FirstHopRedundancyGroup: Shared default-gateway service.
+  HSRPGroup: HSRP first-hop redundancy group.
+  VRRPGroup: VRRP first-hop redundancy group.
+  GLBPGroup: GLBP load-sharing gateway group.
+  VirtualIP: Shared first-hop IP address.
+  VirtualMAC: Shared first-hop MAC address.
+  DefaultGateway: Gateway service consumed by endpoints.
+  FHRPActiveGateway: Active forwarding role for HSRP or VRRP.
+  FHRPStandbyGateway: Standby forwarding role for HSRP or VRRP.
+  ActiveVirtualGateway: GLBP member assigning virtual forwarders.
+  ActiveVirtualForwarder: GLBP member forwarding for a virtual MAC.
+  STPRootPlacement: Intended location of an STP root.
+  VLANHoppingRisk: Risk of unintended VLAN access through tagging ambiguity.
+  UnidirectionalLinkFailure: Failure where traffic or control messages pass in one direction.
+  Layer2Risk: Design or operational risk in a Layer 2 domain.
+  AccessLayer: Endpoint-facing network layer.
+  DistributionLayer: Policy, aggregation, gateway, and STP boundary.
+  LoopFreeL2Design: Layer 2 access design with one logical forwarding path.
+  LoopedL2Design: Layer 2 access design using STP to block redundant paths.
+  RoutedAccessDesign: Access design using Layer 3 links above the access switch.
+properties:
+  Switch:
+    layer_role: {type: string, required: true}
+  VLAN:
+    vlan_id: {type: integer, required: true}
+    active_endpoints: {type: integer, required: true}
+  Trunk:
+    allowed_vlans: {type: list, required: true}
+    unused_vlans: {type: list, required: true}
+  AccessPort:
+    status: {type: string, required: true}
+  STPInstance:
+    instance_id: {type: integer, required: true}
+    mode: {type: string, required: true}
+  STPBlockedPort:
+    reason: {type: string, required: true}
+  NativeVLAN:
+    vlan_id: {type: integer, required: true}
+    status: {type: string, required: true}
+  Layer2Risk:
+    severity: {type: string, required: true}
+  LoopFreeL2Design:
+    suitability_score: {type: integer, required: true}
+  LoopedL2Design:
+    suitability_score: {type: integer, required: true}
+  RoutedAccessDesign:
+    suitability_score: {type: integer, required: true}
+relationship_types:
+  CARRIED_BY: {from: [VLAN], to: [Trunk], description: Trunk permits the VLAN across a link.}
+  MAPPED_TO: {from: [VLAN], to: [STPInstance, VNI], description: VLAN maps to a loop-control or overlay identifier.}
+  ELECTS: {from: [STPInstance, BroadcastSegment, ISISBroadcastSegment], to: [STPRootBridge, DR, BDR, DIS], description: Control domain elects the role used by its forwarding topology.}
+  BLOCKS: {from: [STPInstance], to: [STPBlockedPort], description: STP prevents forwarding on a port to remove a loop.}
+  BELONGS_TO: {from: [AccessPort, BGPNeighbor, ClassMap], to: [VLAN, BGPProcess, QoSPolicy], description: Object belongs to its forwarding, control-plane, or policy owner.}
+  AGGREGATES: {from: [PortChannel, LAG], to: [Interface], description: Logical bundle contains physical interface.}
+  SPANS: {from: [MLAG], to: [Switch], description: MLAG control domain spans switches.}
+  PROVIDES: {from: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup], to: [DefaultGateway], description: Redundancy group supplies gateway service.}
+  HAS_ACTIVE_GATEWAY: {from: [HSRPGroup, VRRPGroup], to: [FHRPActiveGateway], description: Group assigns active forwarding role.}
+  HAS_STANDBY_GATEWAY: {from: [HSRPGroup, VRRPGroup], to: [FHRPStandbyGateway], description: Group assigns standby forwarding role.}
+  HAS_AVG: {from: [GLBPGroup], to: [ActiveVirtualGateway], description: GLBP group has active virtual gateway.}
+  HAS_AVF: {from: [GLBPGroup], to: [ActiveVirtualForwarder], description: GLBP group has active virtual forwarder.}
+  HAS_VIRTUAL_IP: {from: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup, DefaultGateway], to: [VirtualIP], description: Gateway object owns shared IP.}
+  HAS_VIRTUAL_MAC: {from: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup, DefaultGateway, ActiveVirtualForwarder], to: [VirtualMAC], description: Gateway object owns shared MAC.}
+  SHOULD_ALIGN_WITH: {from: [STPRootBridge], to: [FHRPActiveGateway], description: STP and active gateway roles should be colocated for the VLAN.}
+  MAY_ENABLE: {from: [NativeVLAN], to: [VLANHoppingRisk], description: Native VLAN mismatch can enable unintended tag interpretation.}
+  RECEIVED_ON: {from: [BPDU], to: [AccessPort, Trunk], description: Port received summarized BPDU observation.}
+  TRIGGERS: {from: [BPDU], to: [BPDUGuard], description: BPDU activates edge-port protection.}
+  SHUTS_DOWN: {from: [BPDUGuard], to: [AccessPort], description: Guard err-disables protected port.}
+  HAS_NATIVE_VLAN: {from: [Trunk], to: [NativeVLAN], description: Trunk uses VLAN for untagged frames.}
+  MISMATCHED_WITH: {from: [NativeVLAN], to: [NativeVLAN], description: Opposite trunk ends use different native VLANs.}
+  ROLE_ON: {from: [STPRootBridge, FHRPActiveGateway, FHRPStandbyGateway, ActiveVirtualGateway, ActiveVirtualForwarder], to: [Switch], description: Logical role is hosted on switch.}
+  MEMBER_OF_REGION: {from: [STPInstance, Switch], to: [STPRegion], description: Object participates in STP region.}
+  MEMBER_OF_VTP: {from: [Switch], to: [VTPDomain], description: Switch participates in a VLAN distribution domain.}
+  CONTROLS_BRIDGE_DOMAIN: {from: [STPInstance], to: [BridgeDomain], description: STP instance protects bridge domain from loops.}
+  EXTENDS: {from: [BridgeDomain, VLAN], to: [EthernetSegment], description: Layer 2 domain reaches Ethernet segment.}
+  USES_FEATURE: {from: [AccessPort, Trunk], to: [PortFast, BPDUFilter, BPDUGuard, RootGuard, LoopGuard], description: Port enables Layer 2 protection or behavior.}
+  USES_FHRP: {from: [VLAN], to: [FirstHopRedundancyGroup, HSRPGroup, VRRPGroup, GLBPGroup], description: VLAN uses redundancy group for its default gateway.}
+  EXPOSES_RISK: {from: [STPRootBridge, AccessPort, NativeVLAN, LoopedL2Design], to: [Layer2Risk], description: Layer 2 state or design exposes a modeled risk.}
+  CONTAINS_SWITCH: {from: [AccessLayer, DistributionLayer], to: [Switch], description: Hierarchical layer contains switch.}
+constraints:
+  - {label: EthernetSegment, property: id, type: unique}
+  - {label: Switch, property: id, type: unique}
+  - {label: BridgeDomain, property: id, type: unique}
+  - {label: VLAN, property: id, type: unique}
+  - {label: Trunk, property: id, type: unique}
+  - {label: AccessPort, property: id, type: unique}
+  - {label: PortChannel, property: id, type: unique}
+  - {label: LAG, property: id, type: unique}
+  - {label: MLAG, property: id, type: unique}
+  - {label: STPInstance, property: id, type: unique}
+  - {label: STPRegion, property: id, type: unique}
+  - {label: STPRootBridge, property: id, type: unique}
+  - {label: STPBlockedPort, property: id, type: unique}
+  - {label: BPDU, property: id, type: unique}
+  - {label: PortFast, property: id, type: unique}
+  - {label: RootGuard, property: id, type: unique}
+  - {label: LoopGuard, property: id, type: unique}
+  - {label: BPDUGuard, property: id, type: unique}
+  - {label: BPDUFilter, property: id, type: unique}
+  - {label: VTPDomain, property: id, type: unique}
+  - {label: NativeVLAN, property: id, type: unique}
+  - {label: FirstHopRedundancyGroup, property: id, type: unique}
+  - {label: HSRPGroup, property: id, type: unique}
+  - {label: VRRPGroup, property: id, type: unique}
+  - {label: GLBPGroup, property: id, type: unique}
+  - {label: VirtualIP, property: id, type: unique}
+  - {label: VirtualMAC, property: id, type: unique}
+  - {label: DefaultGateway, property: id, type: unique}
+  - {label: FHRPActiveGateway, property: id, type: unique}
+  - {label: FHRPStandbyGateway, property: id, type: unique}
+  - {label: ActiveVirtualGateway, property: id, type: unique}
+  - {label: ActiveVirtualForwarder, property: id, type: unique}
+  - {label: STPRootPlacement, property: id, type: unique}
+  - {label: VLANHoppingRisk, property: id, type: unique}
+  - {label: UnidirectionalLinkFailure, property: id, type: unique}
+  - {label: Layer2Risk, property: id, type: unique}
+  - {label: AccessLayer, property: id, type: unique}
+  - {label: DistributionLayer, property: id, type: unique}
+  - {label: LoopFreeL2Design, property: id, type: unique}
+  - {label: LoopedL2Design, property: id, type: unique}
+  - {label: RoutedAccessDesign, property: id, type: unique}
+dependency_rules:
+  - id: vlan-trunk-transport
+    source: VLAN
+    relationship: CARRIED_BY
+    target: [Trunk]
+    rationale: VLAN reachability depends on explicit trunk allowance.
+  - id: vlan-stp-control
+    source: VLAN
+    relationship: MAPPED_TO
+    target: [STPInstance]
+    rationale: Each extended VLAN needs an explicit loop-control instance.
+  - id: stp-root-election
+    source: STPInstance
+    relationship: ELECTS
+    target: [STPRootBridge]
+    rationale: Root placement determines forwarding direction and blocked links.
+  - id: access-vlan-membership
+    source: AccessPort
+    relationship: BELONGS_TO
+    target: [VLAN]
+    rationale: Endpoint attachment must trace to its broadcast domain.
+  - id: fhrp-default-gateway
+    source: HSRPGroup
+    relationship: PROVIDES
+    target: [DefaultGateway]
+    rationale: Gateway availability is provided by an explicit redundancy group.
+  - id: stp-fhrp-alignment
+    source: STPRootBridge
+    relationship: SHOULD_ALIGN_WITH
+    target: [FHRPActiveGateway]
+    rationale: Colocation avoids unnecessary Layer 2 transit for routed traffic.
+  - id: bpduguard-access-protection
+    source: BPDUGuard
+    relationship: PROTECTS
+    target: [AccessPort]
+    rationale: Edge ports should fail closed when they receive unexpected BPDUs.
+  - id: rootguard-placement-protection
+    source: RootGuard
+    relationship: PROTECTS
+    target: [STPRootPlacement]
+    rationale: Root guard preserves intended root location.
+  - id: loopguard-unidirectional-protection
+    source: LoopGuard
+    relationship: PROTECTS
+    target: [UnidirectionalLinkFailure]
+    rationale: Loop guard prevents a blocked path from forwarding after BPDU loss.
+  - id: l2-service-failure-scope
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [VLAN]
+    rationale: Layer 2 service impact follows the VLAN and its failure domain.
+risk_rules:
+  - id: stp-fhrp-misalignment
+    applies_to: STPRootBridge
+    when: root role and FHRP active role resolve to different switches
+    severity: medium
+    response: Align roles or document the intentional transit path.
+  - id: unexpected-bpdu-on-access-port
+    applies_to: AccessPort
+    when: a BPDU is received on a PortFast edge port
+    severity: high
+    response: Shut the port with BPDU guard and investigate cabling or attached switching.
+  - id: native-vlan-mismatch
+    applies_to: NativeVLAN
+    when: opposite ends of a trunk use different native VLAN IDs
+    severity: critical
+    response: Restore native VLAN consistency and restrict unused VLANs.
+  - id: oversized-bridge-domain
+    applies_to: BridgeDomain
+    when: broadcast domain crosses unrelated failure zones
+    severity: high
+    response: Reduce domain size or document the operational reason for extension.
+validation_queries:
+  - id: stp-fhrp-role-misalignment
+    description: Find VLANs where STP root and active gateway resolve to different switches.
+    cypher: |
+      MATCH (vlan:VLAN)-[:MAPPED_TO]->(stp:STPInstance)-[:ELECTS]->(root:STPRootBridge)-[:ROLE_ON]->(root_switch:Switch)
+      MATCH (vlan)<-[:BELONGS_TO]-(:AccessPort)
+      MATCH (group:HSRPGroup)-[:HAS_ACTIVE_GATEWAY]->(active:FHRPActiveGateway)-[:ROLE_ON]->(active_switch:Switch)
+      WHERE group.vlan_id = vlan.vlan_id AND root_switch <> active_switch
+      RETURN vlan.vlan_id, root_switch.name, active_switch.name
+  - id: access-ports-without-bpduguard
+    description: Find active edge ports without BPDU guard protection.
+    cypher: |
+      MATCH (port:AccessPort {status: 'up'})
+      WHERE NOT (:BPDUGuard)-[:PROTECTS]->(port)
+      RETURN port.id, port.name
+  - id: native-vlan-mismatches
+    description: Find native VLAN objects with an explicit mismatch.
+    cypher: |
+      MATCH (left:NativeVLAN)-[:MISMATCHED_WITH]->(right:NativeVLAN)
+      RETURN left.id, left.vlan_id, right.id, right.vlan_id
+  - id: trunks-with-unused-vlans
+    description: Find trunks permitting VLANs with no active endpoints.
+    cypher: |
+      MATCH (vlan:VLAN)-[:CARRIED_BY]->(trunk:Trunk)
+      WHERE vlan.active_endpoints = 0
+      RETURN trunk.id, collect(vlan.vlan_id) AS unused_vlans
+example_scenarios:
+  - id: stp-hsrp-misalignment
+    summary: STP root and HSRP active roles on different distribution switches create unnecessary transit.
+  - id: bpduguard-edge-shutdown
+    summary: An unexpected BPDU triggers guard protection and shuts an access port.
+  - id: native-vlan-hopping-risk
+    summary: A native VLAN mismatch creates ambiguous tagging and a VLAN hopping risk.
+  - id: access-design-comparison
+    summary: Compare looped Layer 2, loop-free Layer 2, and routed access using failure scope and operational complexity.

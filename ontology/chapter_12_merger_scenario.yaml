@@ -1,0 +1,48 @@
+ontology:
+  id: chapter-12-merger-scenario
+  title: Merger Network Integration Scenario
+  version: 1.0.0
+  description: Original scenario model for integrating organizations, addressing, routing, security, and operations.
+node_labels:
+  Organization: Administrative entity participating in integration.
+  NetworkDomain: Existing network with independent policy and operations.
+  IntegrationPhase: Controlled migration stage.
+  AddressOverlap: Conflicting address space between domains.
+  MigrationWave: Group of sites or services moved together.
+properties:
+  IntegrationPhase:
+    exit_criteria: {type: string, required: true}
+  AddressOverlap:
+    cidr: {type: string, required: true}
+relationship_types:
+  OWNS_DOMAIN: {from: [Organization], to: [NetworkDomain], description: Organization owns network domain.}
+  HAS_OVERLAP: {from: [NetworkDomain], to: [AddressOverlap], description: Domain participates in address conflict.}
+  PRECEDES: {from: [IntegrationPhase, MigrationWave], to: [IntegrationPhase, MigrationWave], description: Source must complete before target.}
+  MIGRATES: {from: [MigrationWave], to: [Site, BusinessService, NetworkDomain], description: Wave moves scoped object.}
+  USES_INTERIM_POLICY: {from: [IntegrationPhase], to: [RedistributionRule, FirewallRule, VPNService], description: Phase uses temporary interconnection control.}
+constraints:
+  - {label: Organization, property: id, type: unique}
+  - {label: IntegrationPhase, property: id, type: unique}
+  - {label: AddressOverlap, property: id, type: unique}
+dependency_rules:
+  - id: merger-phase-exit-validation
+    source: IntegrationPhase
+    relationship: VALIDATED_BY
+    target: [ValidationCheck]
+    rationale: Migration proceeds only when explicit exit criteria are verified.
+risk_rules:
+  - id: merger-mutual-redistribution
+    applies_to: IntegrationPhase
+    when: interim routing uses bidirectional redistribution without tagging and loop prevention
+    severity: critical
+    response: Add route lineage, tagging, filtering, and rollback validation.
+validation_queries:
+  - id: merger-phases-without-validation
+    description: Find migration phases lacking an exit check.
+    cypher: |
+      MATCH (phase:IntegrationPhase)
+      WHERE NOT (phase)-[:VALIDATED_BY]->(:ValidationCheck)
+      RETURN phase.id, phase.name
+example_scenarios:
+  - id: two-company-routing-integration
+    summary: Stage connectivity between OSPF and EIGRP domains while resolving overlap and limiting route feedback.

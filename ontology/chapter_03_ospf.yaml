@@ -1,0 +1,264 @@
+ontology:
+  id: chapter-03-ospf
+  title: OSPF Design
+  version: 2.0.0
+  description: OSPF hierarchy, adjacency, LSA lineage, convergence, protection, summarization, and redistribution dependencies.
+
+node_labels:
+  OSPFArea: OSPF link-state flooding and hierarchy scope.
+  BackboneArea: Area zero connecting inter-area reachability.
+  NormalArea: Area accepting intra-area, inter-area, and external LSAs.
+  StubArea: Area restricting external LSAs and using a default route.
+  TotallyStubbyArea: Area restricting external and inter-area summaries except a default.
+  NSSAArea: Stub-like area allowing local external injection as type 7 LSAs.
+  TotallyNSSAArea: NSSA restricting inter-area summaries except a default.
+  OSPFRouter: Router participating in an OSPF process.
+  OSPFNeighbor: Summarized OSPF adjacency state and peer identity.
+  DR: Designated-router role on a multiaccess segment.
+  BDR: Backup-designated-router role on a multiaccess segment.
+  OSPFInterface: Interface participating in an OSPF area.
+  OSPFNetworkType: Broadcast, point-to-point, NBMA, or point-to-multipoint behavior.
+  LSA: Generic link-state advertisement with semantic lineage.
+  LSAType: LSA category permitted or restricted by area type.
+  RouterLSA: Type 1 router topology advertisement.
+  NetworkLSA: Type 2 multiaccess network advertisement.
+  SummaryLSA: Type 3 or 4 inter-area summary advertisement.
+  ASBR: Router role importing reachability from another domain.
+  ABR: Router role connecting area zero to another area.
+  ExternalLSA: Type 5 external reachability advertisement.
+  NSSALSA: Type 7 NSSA external advertisement.
+  OpaqueLSA: Extensible OSPF advertisement used by additional capabilities.
+  OSPFMetric: OSPF path preference or accumulated metric.
+  Cost: Interface or route cost used by SPF.
+  DefaultRouteInjection: Intent to advertise a default into a constrained area.
+  SPFComputation: Shortest-path calculation and scheduling state.
+  LFA: Loop-free alternate next hop.
+  OSPFAdjacencyRisk: Risk caused by unstable, missing, or incompatible adjacency state.
+  BroadcastSegment: Multiaccess network where OSPF elects DR and BDR.
+  ExternalRoute: Reachability imported from another routing source.
+  Reachability: Summarized ability to reach a prefix or service endpoint.
+  OSPFConvergence: Recovery objective and observed summarized state.
+
+properties:
+  OSPFProcess:
+    process_id: {type: integer, required: true}
+    router_id: {type: string, required: true}
+  OSPFArea:
+    area_id: {type: string, required: true}
+    area_type: {type: string, required: true}
+  OSPFNeighbor:
+    state: {type: string, required: true}
+    peer_router_id: {type: string, required: true}
+  OSPFInterface:
+    address: {type: string, required: true}
+    state: {type: string, required: true}
+  OSPFNetworkType:
+    network_type: {type: string, required: true}
+  LSA:
+    lsa_type: {type: integer, required: true}
+    advertising_router: {type: string, required: true}
+  OSPFMetric:
+    value: {type: integer, required: true}
+  Cost:
+    value: {type: integer, required: true}
+  SPFComputation:
+    duration_ms: {type: integer, required: true}
+  OSPFAdjacencyRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+
+relationship_types:
+  RUNS_ON: {from: [OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], to: [Device, OSPFRouter, ISISRouter, EIGRPRouter], description: Routing process executes on a router device.}
+  FORMED_OVER: {from: [OSPFNeighbor, ISISAdjacency, EIGRPNeighbor], to: [Interface, OSPFInterface, ISISInterface, EIGRPInterface], description: Neighbor adjacency uses its participating interface.}
+  CONNECTS: {from: [ABR, VPNService], to: [OSPFArea, BackboneArea, Site], description: Source provides a modeled connection between its target domains or sites.}
+  REDISTRIBUTES: {from: [ASBR], to: [ExternalRoute], description: ASBR imports external reachability into OSPF.}
+  RESTRICTS:
+    from: [BackboneArea, NormalArea, StubArea, TotallyStubbyArea, NSSAArea, TotallyNSSAArea]
+    to: [LSAType]
+    description: Area type permits or denies propagation of an LSA category.
+  APPLIED_ON: {from: [SummarizationPolicy], to: [ABR, ASBR], description: Boundary router applies summary policy.}
+  ADVERTISED_BY: {from: [Prefix, PrefixSID, NodeSID, AdjacencySID], to: [LSA, RouterLSA, NetworkLSA, SummaryLSA, ExternalLSA, NSSALSA, OpaqueLSA, TLV, ISISTLV], description: Reachability or SID lineage points to its carrying protocol advertisement.}
+  HAS_LSA_TYPE: {from: [LSA, RouterLSA, NetworkLSA, SummaryLSA, ExternalLSA, NSSALSA, OpaqueLSA], to: [LSAType], description: LSA instance has protocol type.}
+  ORIGINATES_IN: {from: [Prefix], to: [OSPFArea], description: Prefix has an OSPF area of origin.}
+  ATTACHED_TO: {from: [OSPFInterface], to: [BroadcastSegment], description: Interface participates in multiaccess segment.}
+  HAS_NETWORK_TYPE: {from: [OSPFInterface], to: [OSPFNetworkType], description: Interface uses OSPF network behavior.}
+  OSPF_ROLE_ON: {from: [DR, BDR], to: [OSPFRouter], description: Elected role is hosted by router.}
+  HAS_OSPF_NEIGHBOR: {from: [OSPFProcess, OSPFRouter], to: [OSPFNeighbor], description: Process or router owns neighbor relationship.}
+  CARRIED_BY_LSA: {from: [ExternalRoute], to: [ExternalLSA, NSSALSA], description: External route is represented by an external LSA.}
+  SUMMARIZES: {from: [SummarizationPolicy], to: [Prefix], description: Policy aggregates or suppresses prefix detail.}
+  GOVERNS: {from: [RedistributionPolicy], to: [ExternalRoute, BGPRoute], description: Redistribution policy governs route movement.}
+  INJECTS_DEFAULT: {from: [DefaultRouteInjection], to: [OSPFArea], description: Policy injects default into area.}
+  HAS_METRIC: {from: [OSPFInterface, Route, ExternalRoute], to: [OSPFMetric, Cost], description: Source has OSPF preference value.}
+  COMPUTES: {from: [OSPFProcess], to: [SPFComputation], description: Process schedules and runs SPF.}
+  PROTECTS_WITH: {from: [Route, Reachability], to: [LFA, FastReroute], description: Reachability uses local alternate protection.}
+  PROVIDES_REACHABILITY_TO: {from: [Reachability], to: [Prefix], description: Reachability state applies to prefix.}
+  EXPOSES_ADJACENCY_RISK: {from: [OSPFNeighbor, BroadcastSegment], to: [OSPFAdjacencyRisk], description: Adjacency state exposes convergence or route-loss risk.}
+  ORIGINATED_FROM: {from: [BGPRoute], to: [OSPFProcess, ExternalRoute, RedistributionPolicy], description: BGP route traces to OSPF redistribution lineage.}
+
+constraints:
+  - {label: OSPFProcess, property: id, type: unique}
+  - {label: OSPFArea, property: id, type: unique}
+  - {label: BackboneArea, property: id, type: unique}
+  - {label: NormalArea, property: id, type: unique}
+  - {label: StubArea, property: id, type: unique}
+  - {label: TotallyStubbyArea, property: id, type: unique}
+  - {label: NSSAArea, property: id, type: unique}
+  - {label: TotallyNSSAArea, property: id, type: unique}
+  - {label: OSPFRouter, property: id, type: unique}
+  - {label: OSPFNeighbor, property: id, type: unique}
+  - {label: DR, property: id, type: unique}
+  - {label: BDR, property: id, type: unique}
+  - {label: OSPFInterface, property: id, type: unique}
+  - {label: OSPFNetworkType, property: id, type: unique}
+  - {label: LSA, property: id, type: unique}
+  - {label: LSAType, property: id, type: unique}
+  - {label: RouterLSA, property: id, type: unique}
+  - {label: NetworkLSA, property: id, type: unique}
+  - {label: SummaryLSA, property: id, type: unique}
+  - {label: ASBR, property: id, type: unique}
+  - {label: ABR, property: id, type: unique}
+  - {label: ExternalLSA, property: id, type: unique}
+  - {label: NSSALSA, property: id, type: unique}
+  - {label: OpaqueLSA, property: id, type: unique}
+  - {label: OSPFMetric, property: id, type: unique}
+  - {label: Cost, property: id, type: unique}
+  - {label: SummarizationPolicy, property: id, type: unique}
+  - {label: RedistributionPolicy, property: id, type: unique}
+  - {label: DefaultRouteInjection, property: id, type: unique}
+  - {label: SPFComputation, property: id, type: unique}
+  - {label: LFA, property: id, type: unique}
+  - {label: FastReroute, property: id, type: unique}
+  - {label: OSPFAdjacencyRisk, property: id, type: unique}
+  - {label: BroadcastSegment, property: id, type: unique}
+  - {label: ExternalRoute, property: id, type: unique}
+  - {label: Reachability, property: id, type: unique}
+  - {label: OSPFConvergence, property: id, type: unique}
+  - {label: BGPRoute, property: id, type: unique}
+
+dependency_rules:
+  - id: ospf-process-device
+    source: OSPFProcess
+    relationship: RUNS_ON
+    target: [Device, OSPFRouter]
+    rationale: Process identity must resolve to its hosting router.
+  - id: ospf-process-area
+    source: OSPFProcess
+    relationship: CONTAINS
+    target: [OSPFArea]
+    rationale: Process hierarchy explicitly contains its areas.
+  - id: ospf-area-interface
+    source: OSPFArea
+    relationship: CONTAINS
+    target: [OSPFInterface]
+    rationale: Interface area membership controls adjacency and flooding.
+  - id: ospf-neighbor-interface
+    source: OSPFNeighbor
+    relationship: FORMED_OVER
+    target: [OSPFInterface]
+    rationale: Adjacency state depends on interface behavior.
+  - id: ospf-broadcast-election
+    source: BroadcastSegment
+    relationship: ELECTS
+    target: [DR, BDR]
+    rationale: Multiaccess adjacency topology depends on stable elected roles.
+  - id: ospf-abr-backbone
+    source: ABR
+    relationship: CONNECTS
+    target: [OSPFArea, BackboneArea]
+    rationale: Inter-area reachability requires area-zero connectivity.
+  - id: ospf-asbr-external
+    source: ASBR
+    relationship: REDISTRIBUTES
+    target: [ExternalRoute]
+    rationale: External route lineage identifies the importing ASBR.
+  - id: ospf-area-lsa-restriction
+    source: StubArea
+    relationship: RESTRICTS
+    target: [LSAType]
+    rationale: Area type determines external LSA visibility.
+  - id: ospf-summary-boundary
+    source: SummarizationPolicy
+    relationship: APPLIED_ON
+    target: [ABR, ASBR]
+    rationale: Summary behavior belongs to an explicit boundary.
+  - id: ospf-prefix-lsa-lineage
+    source: Prefix
+    relationship: ADVERTISED_BY
+    target: [LSA]
+    rationale: Important prefix visibility traces to a specific LSA.
+  - id: ospf-route-lsa-dependency
+    source: Route
+    relationship: DEPENDS_ON
+    target: [LSA]
+    rationale: Installed route depends on its link-state input.
+  - id: ospf-reachability-neighbor
+    source: Reachability
+    relationship: DEPENDS_ON
+    target: [OSPFNeighbor]
+    rationale: Reachability exposes its adjacency dependency.
+  - id: ospf-convergence-spf
+    source: OSPFConvergence
+    relationship: DEPENDS_ON
+    target: [SPFComputation]
+    rationale: Recovery behavior depends on SPF scheduling and duration.
+  - id: ospf-bgp-route-map-control
+    source: RedistributionPolicy
+    relationship: CONTROLLED_BY
+    target: [RouteMap]
+    rationale: OSPF-to-BGP route movement is governed by explicit policy.
+
+risk_rules:
+  - id: missing-backbone-connectivity
+    applies_to: ABR
+    when: non-backbone area has no active ABR connection to area zero
+    severity: critical
+    response: Restore area-zero adjacency or redesign the area boundary.
+  - id: area-type-external-filter
+    applies_to: StubArea
+    when: required external route relies on type 5 propagation
+    severity: high
+    response: Change area type or provide an intentional default route.
+  - id: unstable-dr-bdr
+    applies_to: BroadcastSegment
+    when: DR or BDR role changes repeatedly within the observation window
+    severity: high
+    response: Stabilize priority, interface state, and segment membership.
+  - id: overbroad-summary
+    applies_to: SummarizationPolicy
+    when: required more-specific prefix is suppressed without alternate reachability
+    severity: critical
+    response: Correct summary scope and validate the required prefix end to end.
+
+validation_queries:
+  - id: nonbackbone-area-without-active-abr
+    description: Find non-backbone areas with no active ABR connection to area zero.
+    cypher: |
+      MATCH (area:OSPFArea)
+      WHERE NOT area:BackboneArea
+        AND NOT (:ABR {status: 'up'})-[:CONNECTS]->(area)
+      RETURN area.id, area.name
+  - id: area-denies-required-lsa
+    description: Find required external routes blocked by an area restriction.
+    cypher: |
+      MATCH (area:OSPFArea)-[restriction:RESTRICTS]->(type:LSAType)
+      MATCH (route:ExternalRoute)-[:CARRIED_BY_LSA]->(:LSA)-[:HAS_LSA_TYPE]->(type)
+      WHERE restriction.action = 'deny' AND route.required = true
+      RETURN area.id, route.name, type.name
+  - id: unfiltered-ospf-bgp-policy
+    description: Find OSPF-to-BGP policy without a route-map.
+    cypher: |
+      MATCH (policy:RedistributionPolicy {direction: 'OSPF-to-BGP'})
+      WHERE NOT (policy)-[:CONTROLLED_BY]->(:RouteMap)
+      RETURN policy.id, policy.name
+
+example_scenarios:
+  - id: missing-area-zero
+    summary: Missing backbone connectivity removes inter-area reachability.
+  - id: wrong-stub-type
+    summary: Stub area restrictions prevent required external LSA propagation.
+  - id: ospf-bgp-filter
+    summary: Route-map policy filters an OSPF-originated BGP route.
+  - id: dr-bdr-churn
+    summary: Repeated DR and BDR election destabilizes broadcast-segment adjacencies.
+  - id: bad-summary
+    summary: An overbroad ABR summary suppresses a required more-specific prefix.

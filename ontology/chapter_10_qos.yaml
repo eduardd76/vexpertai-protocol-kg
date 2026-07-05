@@ -1,0 +1,259 @@
+ontology:
+  id: chapter-10-qos
+  title: Quality of Service Design
+  version: 2.0.0
+  description: End-to-end classification, marking, policing, shaping, queuing, congestion evidence, SLA traceability, and bandwidth design necessity.
+
+node_labels:
+  QoSPolicy: End-to-end traffic treatment intent.
+  ClassMap: Reusable traffic classification rule.
+  PolicyMap: Ordered policy binding classes to actions.
+  QoSClass: Policy class receiving marking and queue treatment.
+  TrafficClass: Semantically grouped traffic behavior.
+  DSCP: Layer 3 differentiated-services marking.
+  CoS: Layer 2 class-of-service marking.
+  MarkingPolicy: Policy assigning or preserving traffic markings.
+  PolicingPolicy: Rate enforcement that may drop or remark excess traffic.
+  ShapingPolicy: Rate adaptation that buffers traffic to a target rate.
+  QueuingPolicy: Scheduling and bandwidth allocation policy.
+  PriorityQueue: Strict or low-latency queue for delay-sensitive traffic.
+  BandwidthGuarantee: Minimum scheduler bandwidth allocated to a class.
+  WRED: Weighted random early detection congestion-avoidance policy.
+  CongestionEvent: Time-bounded condition where offered load exceeds available service.
+  InterfaceQueue: Interface scheduling and buffering resource.
+  ApplicationTraffic: Application flow category requiring treatment.
+  VoiceTraffic: Delay- and jitter-sensitive voice media.
+  VideoTraffic: Delay-sensitive interactive or streaming video.
+  CriticalDataTraffic: Business-critical data flow.
+  BestEffortTraffic: Traffic receiving no strict performance guarantee.
+  SLARequirement: Business-facing performance requirement.
+  LatencyRequirement: Maximum acceptable end-to-end latency.
+  JitterRequirement: Maximum acceptable delay variation.
+  LossRequirement: Maximum acceptable packet loss.
+  WANLink: Constrained or unconstrained WAN forwarding link.
+  OversubscriptionRisk: Risk that offered traffic exceeds link or scheduler capacity.
+  Queue: Compatibility label for a scheduling and buffering resource.
+  SLAObjective: Compatibility label for measurable latency, loss, or jitter objective.
+  CongestionPoint: Compatibility label for a location where demand can exceed capacity.
+  SLAViolation: Observed SLA threshold breach.
+  QoSDesignIntent: Expected classification, marking, queueing, or design-simplicity outcome.
+  QoSDesignAssessment: Evidence-based assessment of whether QoS controls are necessary.
+  QoSRisk: Risk caused by missing, incorrect, or excessive QoS treatment.
+
+properties:
+  QoSPolicy:
+    status: {type: string, required: true}
+  DSCP:
+    value: {type: string, required: true}
+  CoS:
+    value: {type: integer, required: true}
+  PolicingPolicy:
+    rate_mbps: {type: integer, required: true}
+  ShapingPolicy:
+    rate_mbps: {type: integer, required: true}
+  BandwidthGuarantee:
+    percent: {type: integer, required: true}
+  CongestionEvent:
+    severity: {type: string, required: true}
+  InterfaceQueue:
+    utilization_percent: {type: integer, required: true}
+  SLARequirement:
+    metric: {type: string, required: true}
+    threshold: {type: string, required: true}
+  WANLink:
+    capacity_mbps: {type: integer, required: true}
+    peak_utilization_percent: {type: integer, required: true}
+  OversubscriptionRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+  SLAViolation:
+    measured_value: {type: string, required: true}
+  QoSRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+
+relationship_types:
+  CLASSIFIED_BY: {from: [ApplicationTraffic, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], to: [ClassMap], description: Application traffic is matched by class map.}
+  CLASSIFIES_AS: {from: [ClassMap], to: [QoSClass, TrafficClass], description: Class map assigns matched traffic to policy class.}
+  APPLIED_TO: {from: [QoSPolicy, PolicyMap, MarkingPolicy, PolicingPolicy, ShapingPolicy, QueuingPolicy], to: [Interface, WANLink], description: QoS policy is attached to an enforcement interface or link.}
+  MARKED_WITH: {from: [QoSClass, TrafficClass], to: [DSCP, CoS], description: Traffic class uses explicit Layer 3 or Layer 2 marking.}
+  REQUIRES_MARKING: {from: [ApplicationTraffic, VoiceTraffic, VideoTraffic, CriticalDataTraffic], to: [DSCP, CoS], description: Application traffic requires expected marking.}
+  MAY_DROP: {from: [PolicingPolicy], to: [TrafficClass, QoSClass, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], description: Policier can drop excess traffic from class.}
+  SMOOTHS: {from: [ShapingPolicy], to: [TrafficClass, QoSClass, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], description: Shaper buffers class traffic to target rate.}
+  MAPS_TO: {from: [SLARequirement, LatencyRequirement, JitterRequirement, LossRequirement], to: [QoSClass, TrafficClass], description: SLA requirement maps to traffic treatment class.}
+  REQUIRES_QOS_POLICY: {from: [Interface, WANLink], to: [QoSPolicy], description: Interface or link requires a policy to meet service intent.}
+  HAS_CLASS_MAP: {from: [QoSPolicy, PolicyMap], to: [ClassMap], description: Policy contains classification rule.}
+  HAS_POLICY_MAP: {from: [QoSPolicy], to: [PolicyMap], description: End-to-end policy is implemented by policy map.}
+  HAS_MARKING_POLICY: {from: [QoSPolicy, PolicyMap], to: [MarkingPolicy], description: Policy uses marking action.}
+  HAS_POLICING_POLICY: {from: [QoSPolicy, PolicyMap, PriorityQueue], to: [PolicingPolicy], description: Policy or queue uses policer.}
+  HAS_SHAPING_POLICY: {from: [QoSPolicy, PolicyMap], to: [ShapingPolicy], description: Policy uses shaping action.}
+  HAS_QUEUING_POLICY: {from: [QoSPolicy, PolicyMap], to: [QueuingPolicy], description: Policy uses queue scheduler.}
+  USES_QUEUE: {from: [QueuingPolicy, QoSClass, TrafficClass], to: [InterfaceQueue, Queue, PriorityQueue], description: Scheduler or class uses queue resource.}
+  USES_WRED: {from: [QueuingPolicy, InterfaceQueue, Queue], to: [WRED], description: Queue uses early-drop congestion avoidance.}
+  HAS_QUEUE: {from: [Interface, WANLink], to: [InterfaceQueue, Queue, PriorityQueue], description: Interface or link owns queue resource.}
+  CAUSES_SLA_VIOLATION: {from: [CongestionEvent], to: [SLAViolation], description: Congestion correlates with observed SLA breach.}
+  DROPS_TRAFFIC: {from: [CongestionEvent, InterfaceQueue], to: [TrafficClass, QoSClass, VoiceTraffic, VideoTraffic, CriticalDataTraffic, BestEffortTraffic], description: Congestion or queue state records dropped traffic class.}
+  VIOLATES_REQUIREMENT: {from: [SLAViolation], to: [SLARequirement, LatencyRequirement, JitterRequirement, LossRequirement], description: Observation exceeds requirement threshold.}
+  SUPPORTS_QOS_STATE: {from: [Evidence], to: [CongestionEvent, InterfaceQueue, SLAViolation, QoSDesignAssessment], description: Evidence supports QoS state or design conclusion.}
+  VIOLATES_QOS_INTENT: {from: [QoSPolicy, ClassMap, PolicingPolicy, QueuingPolicy], to: [QoSDesignIntent], description: Implemented or proposed treatment conflicts with design intent.}
+  EVALUATES_LINK: {from: [QoSDesignAssessment], to: [WANLink], description: Assessment evaluates measured capacity and utilization.}
+  EXPOSES_QOS_RISK: {from: [QoSPolicy, ClassMap, PolicingPolicy, QueuingPolicy, WANLink, CongestionEvent], to: [QoSRisk, OversubscriptionRisk], description: QoS state or design exposes performance risk.}
+  CLASSIFIES: {from: [QoSPolicy], to: [TrafficClass, QoSClass], description: Compatibility relationship from policy to class.}
+  MAPS_TO_QUEUE: {from: [TrafficClass, QoSClass], to: [Queue, InterfaceQueue, PriorityQueue], description: Compatibility relationship from class to queue treatment.}
+  APPLIED_AT: {from: [QoSPolicy], to: [Interface, WANLink, CongestionPoint], description: Compatibility relationship for enforcement location.}
+  MEASURED_BY: {from: [SLAObjective, SLARequirement], to: [ValidationCheck], description: Validation check measures performance objective.}
+
+constraints:
+  - {label: QoSPolicy, property: id, type: unique}
+  - {label: ClassMap, property: id, type: unique}
+  - {label: PolicyMap, property: id, type: unique}
+  - {label: QoSClass, property: id, type: unique}
+  - {label: TrafficClass, property: id, type: unique}
+  - {label: DSCP, property: id, type: unique}
+  - {label: CoS, property: id, type: unique}
+  - {label: MarkingPolicy, property: id, type: unique}
+  - {label: PolicingPolicy, property: id, type: unique}
+  - {label: ShapingPolicy, property: id, type: unique}
+  - {label: QueuingPolicy, property: id, type: unique}
+  - {label: PriorityQueue, property: id, type: unique}
+  - {label: BandwidthGuarantee, property: id, type: unique}
+  - {label: WRED, property: id, type: unique}
+  - {label: CongestionEvent, property: id, type: unique}
+  - {label: InterfaceQueue, property: id, type: unique}
+  - {label: ApplicationTraffic, property: id, type: unique}
+  - {label: VoiceTraffic, property: id, type: unique}
+  - {label: VideoTraffic, property: id, type: unique}
+  - {label: CriticalDataTraffic, property: id, type: unique}
+  - {label: BestEffortTraffic, property: id, type: unique}
+  - {label: SLARequirement, property: id, type: unique}
+  - {label: LatencyRequirement, property: id, type: unique}
+  - {label: JitterRequirement, property: id, type: unique}
+  - {label: LossRequirement, property: id, type: unique}
+  - {label: WANLink, property: id, type: unique}
+  - {label: OversubscriptionRisk, property: id, type: unique}
+  - {label: Queue, property: id, type: unique}
+  - {label: SLAObjective, property: id, type: unique}
+  - {label: CongestionPoint, property: id, type: unique}
+  - {label: SLAViolation, property: id, type: unique}
+  - {label: QoSDesignIntent, property: id, type: unique}
+  - {label: QoSDesignAssessment, property: id, type: unique}
+  - {label: QoSRisk, property: id, type: unique}
+
+dependency_rules:
+  - id: application-classification
+    source: ApplicationTraffic
+    relationship: CLASSIFIED_BY
+    target: [ClassMap]
+    rationale: Application treatment begins with explicit classification.
+  - id: class-map-policy-owner
+    source: ClassMap
+    relationship: BELONGS_TO
+    target: [QoSPolicy]
+    rationale: Classification behavior traces to the owning policy.
+  - id: policy-interface-attachment
+    source: QoSPolicy
+    relationship: APPLIED_TO
+    target: [Interface]
+    rationale: Correct policy definition has no effect until attached.
+  - id: class-marking
+    source: QoSClass
+    relationship: MARKED_WITH
+    target: [DSCP, CoS]
+    rationale: Marking must be explicit and comparable to application intent.
+  - id: queue-bandwidth-allocation
+    source: QueuingPolicy
+    relationship: ALLOCATES
+    target: [BandwidthGuarantee]
+    rationale: Scheduler behavior traces to bounded bandwidth allocation.
+  - id: voice-priority-protection
+    source: PriorityQueue
+    relationship: PROTECTS
+    target: [VoiceTraffic]
+    rationale: Priority treatment protects delay-sensitive voice.
+  - id: policer-drop-domain
+    source: PolicingPolicy
+    relationship: MAY_DROP
+    target: [TrafficClass]
+    rationale: Drop risk is explicit for classes exceeding the policer.
+  - id: shaper-traffic-class
+    source: ShapingPolicy
+    relationship: SMOOTHS
+    target: [TrafficClass]
+    rationale: Shaping absorbs bursts before the constrained link.
+  - id: sla-class-mapping
+    source: SLARequirement
+    relationship: MAPS_TO
+    target: [QoSClass]
+    rationale: Business performance intent maps to concrete treatment.
+  - id: congestion-interface-queue
+    source: CongestionEvent
+    relationship: AFFECTS
+    target: [InterfaceQueue]
+    rationale: Congestion evidence resolves to the affected scheduler queue.
+  - id: business-sla-requirement
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [SLARequirement]
+    rationale: Business impact traces to measurable SLA requirements.
+
+risk_rules:
+  - id: defined-policy-not-applied
+    applies_to: QoSPolicy
+    when: required policy exists but is not attached to the WAN interface
+    severity: critical
+    response: Validate direction and attach the approved policy before changing markings.
+  - id: critical-application-best-effort
+    applies_to: ClassMap
+    when: critical application maps to best-effort treatment
+    severity: critical
+    response: Correct classification and validate marking at ingress and egress.
+  - id: priority-queue-starvation
+    applies_to: PriorityQueue
+    when: priority traffic is insufficiently policed and starves other classes
+    severity: high
+    response: Bound priority traffic and validate remaining class guarantees under load.
+  - id: congestion-sla-breach
+    applies_to: CongestionEvent
+    when: queue congestion correlates with latency, jitter, or loss violation
+    severity: critical
+    response: Validate capacity, shaping, queue allocation, and offered load.
+  - id: unnecessary-qos-complexity
+    applies_to: QoSPolicy
+    when: measured peak utilization has adequate headroom and no differentiated SLA
+    severity: low
+    response: Prefer capacity and operational simplicity unless a real congestion constraint exists.
+
+validation_queries:
+  - id: required-policy-not-applied
+    description: Find interfaces that require a QoS policy but lack attachment.
+    cypher: |
+      MATCH (interface:Interface)-[:REQUIRES_QOS_POLICY]->(policy:QoSPolicy)
+      WHERE NOT (policy)-[:APPLIED_TO]->(interface)
+      RETURN interface.id, interface.name, policy.name
+  - id: application-marking-mismatch
+    description: Find application traffic whose required and actual markings differ.
+    cypher: |
+      MATCH (traffic:ApplicationTraffic)-[:REQUIRES_MARKING]->(expected:DSCP)
+      MATCH (traffic)-[:CLASSIFIED_BY]->(:ClassMap)-[:CLASSIFIES_AS]->(class:QoSClass)
+      MATCH (class)-[:MARKED_WITH]->(actual:DSCP)
+      WHERE expected.value <> actual.value
+      RETURN traffic.id, expected.value, actual.value
+  - id: congestion-with-sla-violation
+    description: Correlate congestion events with SLA violations and evidence.
+    cypher: |
+      MATCH (event:CongestionEvent)-[:CAUSES_SLA_VIOLATION]->(violation:SLAViolation)
+            -[:VIOLATES_REQUIREMENT]->(requirement:SLARequirement)
+      MATCH (evidence:Evidence)-[:SUPPORTS_QOS_STATE]->(event)
+      RETURN event.id, requirement.id, violation.measured_value, evidence.name
+
+example_scenarios:
+  - id: voice-policy-not-attached
+    summary: Voice is correctly classified and marked but policy is absent on the WAN interface.
+  - id: critical-app-best-effort
+    summary: Critical application receives best-effort classification and marking.
+  - id: priority-queue-starvation
+    summary: Unbounded priority traffic starves other scheduler classes.
+  - id: congestion-sla-violation
+    summary: WAN congestion correlates with measured SLA breach.
+  - id: qos-not-required
+    summary: High-capacity low-utilization link does not justify additional QoS complexity.

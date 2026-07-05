@@ -1,0 +1,235 @@
+ontology:
+  id: chapter-06-vpn
+  title: VPN Design
+  version: 2.0.0
+  description: VPN service types, tunnel cryptography, MPLS segmentation, DMVPN dependencies, health, SLA, failover, and application impact.
+
+node_labels:
+  VPNService: Customer or enterprise virtual private network.
+  SiteToSiteVPN: Encrypted connectivity between fixed sites.
+  RemoteAccessVPN: User or endpoint remote-access service.
+  DMVPN: Dynamic multipoint VPN overlay.
+  GRE: Generic routing encapsulation tunnel component.
+  NHRP: Next Hop Resolution Protocol dependency in DMVPN.
+  IPsecTunnel: Encrypted tunnel security association and data path.
+  IKEPolicy: IKE negotiation, authentication, and proposal policy.
+  CryptoMap: Policy binding peers, transforms, and encryption domains.
+  TunnelInterface: Logical tunnel attachment used by routing.
+  VPNRouteTarget: Compatibility label for VPN route-target objects.
+  Hub: Central VPN or DMVPN endpoint.
+  Spoke: Remote VPN or DMVPN endpoint.
+  OverlayTunnel: Logical tunnel carried across underlay transport.
+  UnderlayTransport: Internet, MPLS, carrier Ethernet, or private routed transport.
+  EncryptionDomain: Local and remote traffic selectors protected by IPsec.
+  SplitTunnelPolicy: Remote-access policy selecting tunneled destinations.
+  NATTraversal: UDP encapsulation behavior for IPsec across NAT.
+  TunnelHealth: Summarized crypto and routed forwarding health.
+  VPNSLA: Reachability or performance tracking objective.
+  VPNFailoverPolicy: Policy changing tunnel or route preference after health failure.
+  MPBGP: Multiprotocol BGP VPN route distribution.
+  IKEState: Summarized IKE negotiation state.
+  RoutingState: Summarized routed reachability across a tunnel.
+  VPNRisk: VPN design or operational risk.
+  AsymmetricRoutingRisk: Risk of forward and return paths using inconsistent VPN state.
+  EncryptionDomainRisk: Risk caused by mismatched IPsec traffic selectors.
+
+properties:
+  VPNService:
+    vpn_type: {type: string, required: true}
+  IPsecTunnel:
+    crypto_state: {type: string, required: true}
+  IKEPolicy:
+    version: {type: string, required: true}
+  RouteTarget:
+    value: {type: string, required: true}
+  RouteDistinguisher:
+    value: {type: string, required: true}
+  TunnelHealth:
+    status: {type: string, required: true}
+  VPNSLA:
+    status: {type: string, required: true}
+  IKEState:
+    state: {type: string, required: true}
+  RoutingState:
+    state: {type: string, required: true}
+  VPNRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+
+relationship_types:
+  USES:
+    from: [DMVPN, MPLSL3VPN, MPLSL2VPN]
+    to: [GRE, NHRP, IPsecTunnel, VRF, RouteTarget, VPNRouteTarget, RouteDistinguisher, MPBGP]
+    description: VPN design uses protocol, tunnel, or segmentation component.
+  HAS_TUNNEL: {from: [VPNService, SiteToSiteVPN, RemoteAccessVPN, DMVPN], to: [IPsecTunnel, GRE, OverlayTunnel, TunnelInterface], description: VPN service is realized by tunnel component.}
+  IMPORTS: {from: [VRF], to: [RouteTarget, VPNRouteTarget], description: VRF imports matching VPN routes.}
+  EXPORTS: {from: [VRF], to: [RouteTarget, VPNRouteTarget], description: VRF exports matching VPN routes.}
+  IMPORTED_BY: {from: [VPNRoute], to: [RouteTarget, VPNRouteTarget], description: VPN route is eligible for import through route target.}
+  HAS_HEALTH: {from: [VPNService, IPsecTunnel, OverlayTunnel], to: [TunnelHealth], description: VPN object exposes summarized health.}
+  HAS_STATE: {from: [IPsecTunnel, TunnelInterface], to: [IKEState, RoutingState], description: Tunnel exposes control and routed state.}
+  HAS_ENCRYPTION_DOMAIN: {from: [CryptoMap, IPsecTunnel], to: [EncryptionDomain], description: Crypto policy or tunnel selects protected traffic.}
+  USES_IKE_POLICY: {from: [CryptoMap], to: [IKEPolicy], description: Crypto map uses IKE negotiation policy.}
+  USES_NAT_TRAVERSAL: {from: [IPsecTunnel], to: [NATTraversal], description: Tunnel uses NAT traversal encapsulation.}
+  APPLIES_SPLIT_POLICY: {from: [RemoteAccessVPN], to: [SplitTunnelPolicy], description: Remote-access VPN applies split tunnel intent.}
+  ATTACHED_BY: {from: [Site, VRF], to: [TunnelInterface, CustomerEdge, ProviderEdge], description: Site or VRF reaches VPN through attachment.}
+  TRACKS: {from: [VPNFailoverPolicy], to: [VPNSLA, TunnelHealth], description: Failover policy tracks health objective.}
+  HAS_FAILOVER_ROUTE: {from: [VPNFailoverPolicy], to: [VPNRoute], description: Policy can activate alternate VPN route.}
+  SUPPORTS_STATE: {from: [Evidence], to: [IKEState, RoutingState, TunnelHealth, EncryptionDomain], description: Evidence supports a tunnel or routing state conclusion.}
+  EXPOSES_VPN_RISK: {from: [VPNService, IPsecTunnel, MPLSL3VPN, DMVPN, EncryptionDomain], to: [VPNRisk, AsymmetricRoutingRisk, EncryptionDomainRisk], description: VPN object exposes modeled risk.}
+  CONSUMES_VPN: {from: [BusinessService], to: [VPNService], description: Business service consumes VPN connectivity.}
+  ENCRYPTED_BY: {from: [VPNService], to: [IKEPolicy], description: VPN service follows encryption negotiation policy.}
+
+constraints:
+  - {label: VPNService, property: id, type: unique}
+  - {label: SiteToSiteVPN, property: id, type: unique}
+  - {label: RemoteAccessVPN, property: id, type: unique}
+  - {label: MPLSL3VPN, property: id, type: unique}
+  - {label: MPLSL2VPN, property: id, type: unique}
+  - {label: DMVPN, property: id, type: unique}
+  - {label: GRE, property: id, type: unique}
+  - {label: NHRP, property: id, type: unique}
+  - {label: IPsecTunnel, property: id, type: unique}
+  - {label: IKEPolicy, property: id, type: unique}
+  - {label: CryptoMap, property: id, type: unique}
+  - {label: TunnelInterface, property: id, type: unique}
+  - {label: VRF, property: id, type: unique}
+  - {label: RouteTarget, property: id, type: unique}
+  - {label: VPNRouteTarget, property: id, type: unique}
+  - {label: RouteDistinguisher, property: id, type: unique}
+  - {label: CustomerEdge, property: id, type: unique}
+  - {label: ProviderEdge, property: id, type: unique}
+  - {label: Hub, property: id, type: unique}
+  - {label: Spoke, property: id, type: unique}
+  - {label: OverlayTunnel, property: id, type: unique}
+  - {label: UnderlayTransport, property: id, type: unique}
+  - {label: EncryptionDomain, property: id, type: unique}
+  - {label: SplitTunnelPolicy, property: id, type: unique}
+  - {label: NATTraversal, property: id, type: unique}
+  - {label: TunnelHealth, property: id, type: unique}
+  - {label: VPNSLA, property: id, type: unique}
+  - {label: VPNFailoverPolicy, property: id, type: unique}
+  - {label: VPNRoute, property: id, type: unique}
+  - {label: MPBGP, property: id, type: unique}
+  - {label: IKEState, property: id, type: unique}
+  - {label: RoutingState, property: id, type: unique}
+  - {label: VPNRisk, property: id, type: unique}
+  - {label: AsymmetricRoutingRisk, property: id, type: unique}
+  - {label: EncryptionDomainRisk, property: id, type: unique}
+
+dependency_rules:
+  - id: vpn-service-site
+    source: VPNService
+    relationship: CONNECTS
+    target: [Site]
+    rationale: VPN service identifies the sites it connects.
+  - id: vpn-underlay
+    source: VPNService
+    relationship: DEPENDS_ON
+    target: [UnderlayTransport]
+    rationale: Overlay availability depends on transport.
+  - id: ipsec-ike-policy
+    source: IPsecTunnel
+    relationship: DEPENDS_ON
+    target: [IKEPolicy]
+    rationale: Tunnel establishment depends on compatible IKE negotiation.
+  - id: ipsec-encryption-domain
+    source: IPsecTunnel
+    relationship: PROTECTS
+    target: [EncryptionDomain]
+    rationale: IPsec protects explicitly selected traffic.
+  - id: dmvpn-components
+    source: DMVPN
+    relationship: USES
+    target: [GRE, NHRP, IPsecTunnel]
+    rationale: DMVPN reachability depends on encapsulation, resolution, and encryption.
+  - id: mpls-l3vpn-components
+    source: MPLSL3VPN
+    relationship: USES
+    target: [VRF, RouteDistinguisher, RouteTarget, MPBGP]
+    rationale: L3VPN route separation and distribution require all components.
+  - id: vpn-route-import
+    source: VPNRoute
+    relationship: IMPORTED_BY
+    target: [RouteTarget]
+    rationale: VPN route visibility follows route-target import policy.
+  - id: tunnel-health-state
+    source: TunnelHealth
+    relationship: DEPENDS_ON
+    target: [IKEState, RoutingState]
+    rationale: Crypto-up alone does not prove routed forwarding.
+  - id: application-vpn
+    source: Application
+    relationship: DEPENDS_ON
+    target: [VPNService]
+    rationale: Application impact traces to the VPN it consumes.
+  - id: business-application
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [Application]
+    rationale: Business impact traces through the application.
+  - id: vpn-failover-protection
+    source: VPNFailoverPolicy
+    relationship: PROTECTS
+    target: [VPNService]
+    rationale: Failover policy protects service when health tracking works.
+
+risk_rules:
+  - id: crypto-up-routing-down
+    applies_to: TunnelHealth
+    when: IKE state is up and routing state is down
+    severity: high
+    response: Investigate routes, selectors, and tunnel interface before renegotiating IKE.
+  - id: route-target-mismatch
+    applies_to: RouteTarget
+    when: export target has no intended matching VRF import
+    severity: critical
+    response: Correct import and export intent and validate tenant isolation.
+  - id: broken-nhrp-dependency
+    applies_to: DMVPN
+    when: spoke registration or resolution is down
+    severity: high
+    response: Restore NHRP state before changing EIGRP or IPsec.
+  - id: failed-vpn-sla
+    applies_to: VPNSLA
+    when: failover route exists but tracking status is failed
+    severity: critical
+    response: Repair tracking and validate policy activation.
+  - id: encryption-domain-mismatch
+    applies_to: EncryptionDomain
+    when: local and remote selectors do not match required application flow
+    severity: critical
+    response: Correct selectors and validate bidirectional traffic.
+
+validation_queries:
+  - id: tunnel-crypto-up-routing-down
+    description: Find tunnels with established IKE but missing routed forwarding.
+    cypher: |
+      MATCH (tunnel:IPsecTunnel)-[:HAS_STATE]->(ike:IKEState)
+      MATCH (tunnel)-[:HAS_STATE]->(routing:RoutingState)
+      WHERE ike.state = 'up' AND routing.state = 'down'
+      RETURN tunnel.id, tunnel.name
+  - id: vpn-route-target-no-import
+    description: Find VPN routes whose route target is imported by no VRF.
+    cypher: |
+      MATCH (route:VPNRoute)-[:IMPORTED_BY]->(target:RouteTarget)
+      WHERE NOT (:VRF)-[:IMPORTS]->(target)
+      RETURN route.id, target.value
+  - id: failed-sla-with-failover-route
+    description: Find failover policy with route but failed tracking.
+    cypher: |
+      MATCH (policy:VPNFailoverPolicy)-[:TRACKS]->(sla:VPNSLA)
+      MATCH (policy)-[:HAS_FAILOVER_ROUTE]->(route:VPNRoute)
+      WHERE sla.status = 'failed'
+      RETURN policy.id, route.id
+
+example_scenarios:
+  - id: crypto-up-routing-down
+    summary: IPsec is established while routes across the tunnel are missing.
+  - id: l3vpn-route-target-mismatch
+    summary: Exported VPN route is not imported into the intended VRF.
+  - id: dmvpn-nhrp-failure
+    summary: Spoke-to-spoke reachability fails because NHRP state is broken.
+  - id: failover-sla-failure
+    summary: Alternate route exists but failed tracking prevents activation.
+  - id: encryption-selector-mismatch
+    summary: Application traffic is absent from the negotiated encryption domain.

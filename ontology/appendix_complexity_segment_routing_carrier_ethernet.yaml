@@ -1,0 +1,51 @@
+ontology:
+  id: appendix-complexity-segment-routing-carrier-ethernet
+  title: Complexity, Segment Routing, and Carrier Ethernet
+  version: 1.0.0
+  description: Design complexity control, segment-routing intent, and carrier Ethernet service semantics.
+node_labels:
+  ComplexityBudget: Limit on protocols, states, interactions, and operational burden.
+  SegmentRoutingDomain: SR-MPLS or SRv6 control and forwarding scope.
+  SegmentIdentifier: Node, adjacency, binding, or service segment.
+  SegmentRoutingPolicy: Ordered segment-list and path intent.
+  CarrierEthernetService: E-Line, E-LAN, or E-Tree service abstraction.
+  ServiceDemarcation: Provider-customer responsibility boundary.
+properties:
+  ComplexityBudget:
+    maximum_score: {type: integer, required: true}
+  SegmentIdentifier:
+    sid_type: {type: string, required: true}
+  CarrierEthernetService:
+    service_type: {type: string, required: true}
+relationship_types:
+  CONSUMES_COMPLEXITY: {from: [DesignDecision, DesignOption], to: [ComplexityBudget], description: Choice consumes operational complexity allowance.}
+  HAS_SEGMENT: {from: [SegmentRoutingDomain], to: [SegmentIdentifier], description: Domain allocates segment.}
+  STEERS_WITH: {from: [SegmentRoutingPolicy], to: [SegmentIdentifier], description: Policy uses ordered segment.}
+  CARRIES_SERVICE: {from: [SegmentRoutingPolicy, CarrierEthernetService], to: [BusinessService, VPNService], description: Transport construct carries service.}
+  TERMINATES_AT: {from: [CarrierEthernetService], to: [ServiceDemarcation], description: Provider service ends at demarcation.}
+constraints:
+  - {label: ComplexityBudget, property: id, type: unique}
+  - {label: SegmentRoutingDomain, property: id, type: unique}
+  - {label: CarrierEthernetService, property: id, type: unique}
+dependency_rules:
+  - id: segment-routing-underlay
+    source: SegmentRoutingPolicy
+    relationship: DEPENDS_ON
+    target: [UnderlayRouting]
+    rationale: Segment intent depends on IGP topology and SID reachability.
+risk_rules:
+  - id: complexity-budget-exceeded
+    applies_to: ComplexityBudget
+    when: cumulative design choice score exceeds maximum_score
+    severity: high
+    response: Simplify protocol interactions or add operational automation and validation.
+validation_queries:
+  - id: carrier-services-without-demarcation
+    description: Find carrier Ethernet services with no responsibility boundary.
+    cypher: |
+      MATCH (service:CarrierEthernetService)
+      WHERE NOT (service)-[:TERMINATES_AT]->()
+      RETURN service.id, service.name
+example_scenarios:
+  - id: sr-carrier-transport
+    summary: Carry a VPN over a segment-routing policy and carrier access while keeping failure ownership explicit.

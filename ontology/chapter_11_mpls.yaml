@@ -1,0 +1,263 @@
+ontology:
+  id: chapter-11-mpls
+  title: MPLS Design
+  version: 2.0.0
+  description: Label distribution, forwarding state, VPN services, pseudowires, traffic engineering, fast reroute, control-plane synchronization, underlay dependency, and service impact.
+
+node_labels:
+  MPLSDomain: Label-switched transport scope.
+  LabelSwitchRouter: Router forwarding packets by MPLS label.
+  ProviderRouter: Core provider router carrying MPLS transport without customer VRFs.
+  LDP: Label Distribution Protocol process.
+  RSVPTE: RSVP traffic-engineering signaling process.
+  SegmentRoutingMPLS: Segment-routing MPLS control and forwarding mode.
+  Label: Locally significant MPLS forwarding identifier.
+  LabelBinding: Binding between a label and forwarding equivalence class.
+  FEC: Forwarding equivalence class receiving common label treatment.
+  MPLSLSP: MPLS label-switched path through one or more label switch routers.
+  LabelSwitchedPath: Summarized forwarding path through an MPLS domain.
+  MPLSForwardingTable: MPLS data-plane forwarding table.
+  LFIB: Label forwarding information base.
+  MPLSService: Customer or internal service transported by MPLS.
+  VPWS: Point-to-point virtual private wire service.
+  VPLS: Multipoint virtual private LAN service.
+  Pseudowire: Emulated Layer 2 circuit across packet transport.
+  MPBGPVPNv4: Multiprotocol BGP VPNv4 route distribution.
+  MPBGPVPNv6: Multiprotocol BGP VPNv6 route distribution.
+  TrafficEngineeringTunnel: Explicit or constrained MPLS traffic-engineering path.
+  LDPIGPSynchronization: Mechanism delaying IGP transit use until labels are ready.
+  LDPSessionProtection: Mechanism preserving LDP session state across link changes.
+  PenultimateHopPopping: Removal of the top label one hop before LSP egress.
+  TransportUnderlay: IGP, links, and label transport supporting MPLS services.
+  ServiceOverlay: VPN or pseudowire service layer transported by MPLS.
+  LabelDistributionProcess: LDP or segment-routing label distribution function.
+  TrafficEngineeringPolicy: Path constraint and preference intent.
+  FastReroutePolicy: Compatibility label for local protection behavior.
+  LDPAdjacency: LDP peer session and discovery state.
+  TargetedLDP: Targeted LDP signaling session used by pseudowires.
+  L2VPNSignaling: Generic BGP or targeted-LDP L2VPN signaling.
+  IGPTEExtensions: IGP traffic-engineering topology and resource advertisements.
+  TrafficBlackhole: Forwarding failure where traffic follows a path without usable labels.
+  MPLSRisk: Risk caused by label, signaling, policy, protection, or underlay state.
+
+properties:
+  MPLSDomain:
+    control_plane: {type: string, required: true}
+  LDP:
+    router_id: {type: string, required: true}
+  RSVPTE:
+    state: {type: string, required: true}
+  Label:
+    value: {type: integer, required: true}
+  LabelBinding:
+    state: {type: string, required: true}
+  MPLSLSP:
+    state: {type: string, required: true}
+  MPLSService:
+    service_type: {type: string, required: true}
+  Pseudowire:
+    state: {type: string, required: true}
+  LDPAdjacency:
+    state: {type: string, required: true}
+  TrafficEngineeringTunnel:
+    state: {type: string, required: true}
+  TransportUnderlay:
+    state: {type: string, required: true}
+  MPLSRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+
+relationship_types:
+  CREATED_BY: {from: [LabelBinding], to: [LDP, RSVPTE, SegmentRoutingMPLS], description: Label binding is originated by label distribution or TE control plane.}
+  BINDS_LABEL: {from: [LabelBinding], to: [Label], description: Binding assigns a local MPLS label.}
+  BINDS_FEC: {from: [LabelBinding], to: [FEC], description: Binding maps forwarding equivalence class to label.}
+  FEC_FOR_PREFIX: {from: [FEC], to: [Prefix], description: FEC represents summarized prefix reachability.}
+  HAS_LDP_ADJACENCY: {from: [LDP, LabelSwitchRouter, ProviderEdge, ProviderRouter], to: [LDPAdjacency], description: MPLS router or LDP process owns adjacency.}
+  HAS_FORWARDING_TABLE: {from: [LabelSwitchRouter, ProviderEdge, ProviderRouter], to: [MPLSForwardingTable, LFIB], description: Router owns MPLS data-plane table.}
+  CONTAINS_LABEL_BINDING: {from: [MPLSForwardingTable, LFIB], to: [LabelBinding], description: Forwarding table contains installed label binding.}
+  IMPORTS_VPN_ROUTE: {from: [RouteTarget], to: [VPNRoute], description: Route target makes VPN route eligible for import.}
+  IMPORTS_INTO: {from: [RouteTarget], to: [VRF], description: Route target imports matching route into VRF.}
+  EXPORTED_WITH: {from: [VPNRoute], to: [RouteTarget], description: VPN route carries export route target.}
+  TARGETS_VRF: {from: [VPNRoute], to: [VRF], description: VPN route is intended for customer VRF.}
+  HAS_VPN_ROUTE: {from: [MPLSService, MPLSL3VPN], to: [VPNRoute], description: MPLS VPN service owns customer route.}
+  CARRIES_PREFIX: {from: [VPNRoute], to: [Prefix], description: VPN route carries customer prefix.}
+  HAS_TRANSPORT_LSP: {from: [MPLSService, MPLSL3VPN, MPLSL2VPN, VPWS, VPLS, ServiceOverlay], to: [LSP, MPLSLSP, LabelSwitchedPath], description: Service overlay uses MPLS transport path.}
+  HAS_PSEUDOWIRE: {from: [MPLSService, MPLSL2VPN, VPWS, VPLS], to: [Pseudowire], description: Layer 2 service is realized by pseudowire.}
+  USES_SIGNALING: {from: [Pseudowire], to: [TargetedLDP, L2VPNSignaling], description: Pseudowire uses explicit signaling control plane.}
+  HAS_IGP_REACHABILITY: {from: [Prefix, FEC, LDPAdjacency], to: [IGPReachability], description: Object has summarized IGP reachability state.}
+  PREVENTS: {from: [LDPIGPSynchronization], to: [TrafficBlackhole], description: Synchronization prevents unlabeled transit after IGP convergence.}
+  USES_PHP: {from: [LSP, MPLSLSP, LabelSwitchedPath], to: [PenultimateHopPopping], description: Path uses penultimate-hop label removal.}
+  MEMBER_OF_MPLS_DOMAIN: {from: [LabelSwitchRouter, ProviderEdge, ProviderRouter, LDP, RSVPTE, SegmentRoutingMPLS], to: [MPLSDomain], description: Router or control plane participates in MPLS domain.}
+  HAS_UNDERLAY: {from: [MPLSDomain, LSP, MPLSLSP, LabelSwitchedPath], to: [TransportUnderlay], description: MPLS domain or path uses transport underlay.}
+  CARRIES_OVERLAY: {from: [LSP, MPLSLSP, LabelSwitchedPath], to: [ServiceOverlay, MPLSService], description: Transport path carries service overlay.}
+  SUPPORTS_MPLS_STATE: {from: [Evidence], to: [LabelBinding, LSP, MPLSLSP, LDPAdjacency, RouteTarget, Pseudowire, TrafficEngineeringTunnel, LDPIGPSynchronization, TransportUnderlay], description: Evidence supports MPLS diagnostic state.}
+  EXPOSES_MPLS_RISK: {from: [MPLSService, MPLSL3VPN, Pseudowire, LDPAdjacency, TrafficEngineeringTunnel, TransportUnderlay], to: [MPLSRisk], description: MPLS service or control state exposes risk.}
+  PARTICIPATES_IN_MPLS: {from: [Device], to: [MPLSDomain], description: Device forwards labels in domain.}
+  ESTABLISHES: {from: [LabelDistributionProcess, LDP, RSVPTE, SegmentRoutingMPLS], to: [LabelSwitchedPath, LSP, MPLSLSP], description: Control plane creates label-switched path.}
+  ENGINEERED_BY: {from: [LabelSwitchedPath, LSP, MPLSLSP], to: [TrafficEngineeringPolicy, TrafficEngineeringTunnel], description: Policy or tunnel constrains path.}
+  PROTECTED_WITH: {from: [LabelSwitchedPath, LSP, MPLSLSP], to: [FastReroutePolicy, FastReroute], description: Path has local repair.}
+  TRANSPORTS: {from: [LabelSwitchedPath, LSP, MPLSLSP], to: [VPNService, MPLSService, BusinessService], description: Label path carries service.}
+
+constraints:
+  - {label: MPLSDomain, property: id, type: unique}
+  - {label: LabelSwitchRouter, property: id, type: unique}
+  - {label: ProviderEdge, property: id, type: unique}
+  - {label: ProviderRouter, property: id, type: unique}
+  - {label: CustomerEdge, property: id, type: unique}
+  - {label: LDP, property: id, type: unique}
+  - {label: RSVPTE, property: id, type: unique}
+  - {label: SegmentRoutingMPLS, property: id, type: unique}
+  - {label: Label, property: id, type: unique}
+  - {label: LabelBinding, property: id, type: unique}
+  - {label: FEC, property: id, type: unique}
+  - {label: LSP, property: id, type: unique}
+  - {label: MPLSLSP, property: id, type: unique}
+  - {label: LabelSwitchedPath, property: id, type: unique}
+  - {label: MPLSForwardingTable, property: id, type: unique}
+  - {label: LFIB, property: id, type: unique}
+  - {label: MPLSService, property: id, type: unique}
+  - {label: MPLSL3VPN, property: id, type: unique}
+  - {label: MPLSL2VPN, property: id, type: unique}
+  - {label: VPWS, property: id, type: unique}
+  - {label: VPLS, property: id, type: unique}
+  - {label: Pseudowire, property: id, type: unique}
+  - {label: VRF, property: id, type: unique}
+  - {label: RouteDistinguisher, property: id, type: unique}
+  - {label: RouteTarget, property: id, type: unique}
+  - {label: MPBGPVPNv4, property: id, type: unique}
+  - {label: MPBGPVPNv6, property: id, type: unique}
+  - {label: TrafficEngineeringTunnel, property: id, type: unique}
+  - {label: FastReroute, property: id, type: unique}
+  - {label: LDPIGPSynchronization, property: id, type: unique}
+  - {label: LDPSessionProtection, property: id, type: unique}
+  - {label: PenultimateHopPopping, property: id, type: unique}
+  - {label: TransportUnderlay, property: id, type: unique}
+  - {label: ServiceOverlay, property: id, type: unique}
+  - {label: LabelDistributionProcess, property: id, type: unique}
+  - {label: TrafficEngineeringPolicy, property: id, type: unique}
+  - {label: FastReroutePolicy, property: id, type: unique}
+  - {label: LDPAdjacency, property: id, type: unique}
+  - {label: TargetedLDP, property: id, type: unique}
+  - {label: L2VPNSignaling, property: id, type: unique}
+  - {label: IGPTEExtensions, property: id, type: unique}
+  - {label: TrafficBlackhole, property: id, type: unique}
+  - {label: MPLSRisk, property: id, type: unique}
+
+dependency_rules:
+  - id: mpls-service-lsp
+    source: MPLSService
+    relationship: DEPENDS_ON
+    target: [LSP]
+    rationale: Customer service requires a usable label-switched transport path.
+  - id: lsp-label-binding
+    source: LSP
+    relationship: DEPENDS_ON
+    target: [LabelBinding]
+    rationale: LSP forwarding requires installed label bindings.
+  - id: label-binding-control-plane
+    source: LabelBinding
+    relationship: CREATED_BY
+    target: [LDP, RSVPTE, SegmentRoutingMPLS]
+    rationale: Label lineage identifies its distributing control plane.
+  - id: ldp-adjacency-igp
+    source: LDPAdjacency
+    relationship: DEPENDS_ON
+    target: [IGPReachability]
+    rationale: LDP discovery and transport require reachable peer addresses.
+  - id: mpls-l3vpn-components
+    source: MPLSL3VPN
+    relationship: DEPENDS_ON
+    target: [VRF, RouteDistinguisher, RouteTarget, MPBGPVPNv4, MPBGPVPNv6, LSP]
+    rationale: L3VPN requires separation, policy, route distribution, and label transport.
+  - id: route-target-route-import
+    source: RouteTarget
+    relationship: IMPORTS_VPN_ROUTE
+    target: [VPNRoute]
+    rationale: Route target determines VPN route import eligibility.
+  - id: pseudowire-signaling
+    source: Pseudowire
+    relationship: DEPENDS_ON
+    target: [TargetedLDP, L2VPNSignaling]
+    rationale: Pseudowire state requires a functioning signaling plane.
+  - id: ldp-igp-blackhole-prevention
+    source: LDPIGPSynchronization
+    relationship: PREVENTS
+    target: [TrafficBlackhole]
+    rationale: IGP metric suppression avoids forwarding before labels converge.
+  - id: traffic-engineering-dependencies
+    source: TrafficEngineeringTunnel
+    relationship: DEPENDS_ON
+    target: [RSVPTE, IGPTEExtensions]
+    rationale: RSVP-TE requires signaling and TE topology advertisements.
+  - id: fast-reroute-lsp-protection
+    source: FastReroute
+    relationship: PROTECTS
+    target: [LSP]
+    rationale: Local repair protects the transport path during failure.
+  - id: business-mpls-service
+    source: BusinessService
+    relationship: DEPENDS_ON
+    target: [MPLSService]
+    rationale: Business impact traces through the MPLS service.
+
+risk_rules:
+  - id: vpn-route-without-label-path
+    applies_to: MPLSService
+    when: VPN route is present but transport LSP has no installed label binding
+    severity: critical
+    response: Restore label forwarding before changing VPN route policy.
+  - id: ldp-down-igp-up
+    applies_to: LDPAdjacency
+    when: IGP peer reachability is up but LDP adjacency is down
+    severity: critical
+    response: Validate discovery, transport address, ACL, and session state.
+  - id: route-target-mismatch-mpls
+    applies_to: RouteTarget
+    when: exported route target is not imported by intended customer VRF
+    severity: critical
+    response: Correct import/export policy and validate tenant isolation.
+  - id: pseudowire-signaling-down
+    applies_to: Pseudowire
+    when: pseudowire is down because targeted LDP or L2VPN signaling is unavailable
+    severity: high
+    response: Restore signaling before changing attachment-circuit configuration.
+  - id: missing-te-extension
+    applies_to: TrafficEngineeringTunnel
+    when: RSVP signaling is active but IGP TE extension state is missing
+    severity: high
+    response: Restore TE advertisements and validate constrained path computation.
+
+validation_queries:
+  - id: lsp-without-label-binding
+    description: Find MPLS paths with no label binding.
+    cypher: |
+      MATCH (lsp:MPLSLSP)
+      WHERE NOT (lsp)-[:DEPENDS_ON]->(:LabelBinding)
+      RETURN lsp.id, lsp.name, lsp.state
+  - id: ldp-down-with-igp-up
+    description: Find failed LDP adjacencies whose IGP reachability remains up.
+    cypher: |
+      MATCH (adjacency:LDPAdjacency)-[:DEPENDS_ON]->(igp:IGPReachability)
+      WHERE adjacency.state = 'down' AND igp.state = 'up'
+      RETURN adjacency.id, adjacency.name
+  - id: route-target-not-imported
+    description: Find VPN routes whose export target is not imported by intended VRF.
+    cypher: |
+      MATCH (route:VPNRoute)-[:EXPORTED_WITH]->(target:RouteTarget)
+      MATCH (route)-[:TARGETS_VRF]->(vrf:VRF)
+      WHERE NOT (vrf)-[:IMPORTS]->(target)
+      RETURN route.id, target.value, vrf.name
+
+example_scenarios:
+  - id: vpn-route-no-label
+    summary: VPN control-plane route exists without usable label path.
+  - id: ldp-adjacency-divergence
+    summary: IGP stays up while LDP adjacency is down.
+  - id: route-target-import-mismatch
+    summary: Export target does not match intended VRF import.
+  - id: pseudowire-signaling-failure
+    summary: VPWS pseudowire fails because targeted LDP is down.
+  - id: rsvp-te-igp-extension
+    summary: RSVP-TE path computation depends on IGP TE advertisements.
+  - id: ldp-igp-synchronization
+    summary: Synchronization suppresses transit until label forwarding converges.

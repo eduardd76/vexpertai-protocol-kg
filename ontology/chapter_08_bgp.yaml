@@ -1,0 +1,283 @@
+ontology:
+  id: chapter-08-bgp
+  title: Border Gateway Protocol Design
+  version: 2.0.0
+  description: BGP sessions, updates, path attributes, policy, reflection, next-hop recursion, exit selection, edge design, and convergence protection.
+
+node_labels:
+  AutonomousSystem: BGP administrative routing domain.
+  IBGPSession: BGP session within an autonomous system.
+  EBGPSession: BGP session between autonomous systems.
+  RouteReflector: iBGP route-reflection function.
+  RouteReflectorClient: BGP client receiving reflected routes.
+  RouteReflectorCluster: iBGP reflection and cluster-ID scope.
+  Confederation: Collection of private member ASNs presented as one external ASN.
+  BGPUpdate: BGP message carrying reachable or withdrawn NLRI and attributes.
+  NLRI: Network-layer reachability information.
+  PathAttribute: Attribute participating in policy or best-path selection.
+  ASPath: Ordered autonomous-system path.
+  LocalPreference: Intra-AS exit preference.
+  MED: Inter-AS entry suggestion.
+  NextHop: Forwarding recursion target carried by BGP.
+  BGPNextHop: BGP next-hop object requiring recursive reachability.
+  ExtendedCommunity: Extended BGP policy attribute including VPN semantics.
+  LargeCommunity: Three-part BGP policy attribute.
+  RoutePolicy: Ordered import, export, or path-manipulation policy.
+  ASPathList: AS-path matching policy object.
+  CommunityList: Community matching policy object.
+  BGPBestPathDecision: Ordered evaluation resulting in selected BGP path.
+  AddPath: Capability advertising multiple paths for the same NLRI.
+  BGPFreeCore: Design where core routers carry transport but not service BGP.
+  BGPPIC: Precomputed alternate BGP next-hop protection.
+  BGPBestExternal: Advertisement of best external path alongside internal best.
+  HotPotatoRouting: Selection of nearest acceptable exit.
+  ColdPotatoRouting: Policy retaining traffic to a preferred distant exit.
+  PeeringPolicy: Commercial and technical policy for a BGP peer.
+  TransitProvider: External AS providing transit.
+  CustomerRoute: Customer-originated BGP reachability.
+  BlackholeRoute: BGP route intentionally directed to discard.
+  BGPAddressFamily: BGP network-layer reachability family.
+  BGPPolicy: Compatibility label for BGP policy intent.
+  BGPPathPolicy: Ordered attribute manipulation and selection intent.
+  NextHopFailure: Failure of selected recursive next hop.
+  IGPMetricToExit: IGP distance controlling nearest-exit selection.
+  PolicyPreference: Explicit policy controlling distant-exit selection.
+  EdgeToEdgeReachability: Transport reachability between BGP edge nodes.
+  ServiceReachability: Summarized service path through a selected BGP route.
+  SelectedBGPPath: Selected path and exit used for forwarding.
+  BGPPathRisk: Risk caused by policy, reflection, recursion, or blackholing.
+
+properties:
+  BGPProcess:
+    asn: {type: integer, required: true}
+    router_id: {type: string, required: true}
+  AutonomousSystem:
+    asn: {type: integer, required: true}
+  BGPNeighbor:
+    session_state: {type: string, required: true}
+    peer_address: {type: string, required: true}
+  BGPUpdate:
+    action: {type: string, required: true}
+  ASPath:
+    value: {type: string, required: true}
+  LocalPreference:
+    value: {type: integer, required: true}
+  MED:
+    value: {type: integer, required: true}
+  NextHop:
+    address: {type: string, required: true}
+  Community:
+    value: {type: string, required: true}
+  BGPBestPathDecision:
+    reason: {type: string, required: true}
+  BGPPathRisk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+
+relationship_types:
+  ADVERTISED_TO: {from: [BGPRoute], to: [BGPNeighbor, RouteReflectorClient], description: BGP route is advertised to peer or client.}
+  FILTERS: {from: [RoutePolicy, MulticastBoundary], to: [BGPRoute, MulticastGroup], description: Policy or boundary permits, denies, or scopes a route or group.}
+  MODIFIES_ROUTE: {from: [RoutePolicy], to: [BGPRoute], description: Policy changes route attributes.}
+  MATCHES: {from: [PrefixList], to: [Prefix], description: Prefix list matches route prefix.}
+  INFLUENCES: {from: [Community, ExtendedCommunity, LargeCommunity], to: [RoutePolicy], description: Community value drives policy behavior.}
+  REFLECTS: {from: [RouteReflector], to: [BGPRoute], description: Route reflector reflects route rather than requiring full mesh.}
+  REFLECTED_TO: {from: [BGPRoute], to: [RouteReflectorClient], description: Reflected route is sent to client.}
+  HAS_NEXT_HOP: {from: [BGPRoute, SelectedBGPPath], to: [NextHop, BGPNextHop], description: Route or selected path uses recursive next hop.}
+  HAS_ATTRIBUTE: {from: [BGPRoute, BGPUpdate], to: [PathAttribute, ASPath, LocalPreference, MED, NextHop, Community, ExtendedCommunity, LargeCommunity], description: Route or update carries path attribute.}
+  CARRIES_NLRI: {from: [BGPUpdate], to: [NLRI], description: Update carries reachable or withdrawn NLRI.}
+  REPRESENTS_NLRI: {from: [BGPRoute], to: [NLRI, Prefix], description: Route represents network-layer reachability.}
+  HAS_SESSION: {from: [BGPProcess], to: [IBGPSession, EBGPSession], description: Process owns BGP session.}
+  SESSION_WITH: {from: [IBGPSession, EBGPSession], to: [BGPNeighbor], description: Session terminates on neighbor.}
+  BELONGS_TO_AS: {from: [BGPProcess], to: [AutonomousSystem, Confederation], description: Process belongs to routing administration.}
+  ACTIVATES: {from: [BGPProcess], to: [BGPAddressFamily], description: Process enables address family.}
+  APPLIES_BGP_POLICY: {from: [BGPProcess, BGPNeighbor, IBGPSession, EBGPSession], to: [BGPPolicy, BGPPathPolicy, RoutePolicy, PeeringPolicy], description: BGP object applies policy.}
+  HAS_CLIENT: {from: [RouteReflector, RouteReflectorCluster], to: [RouteReflectorClient], description: Reflection domain has client.}
+  MEMBER_OF_RR_CLUSTER: {from: [RouteReflector], to: [RouteReflectorCluster], description: Reflector belongs to cluster.}
+  USES_ROUTE: {from: [SelectedBGPPath, ServiceReachability], to: [BGPRoute], description: Selected path or service reachability uses route.}
+  USES_EXIT: {from: [HotPotatoRouting, ColdPotatoRouting, SelectedBGPPath], to: [InternetEdge], description: Routing behavior selects internet edge.}
+  PROVIDES_TRANSIT: {from: [TransitProvider], to: [InternetEdge, AutonomousSystem], description: Provider supplies external transit.}
+  ANNOUNCES: {from: [BGPNeighbor, TransitProvider], to: [CustomerRoute, BGPRoute], description: Peer announces route.}
+  TRIGGERS_BLACKHOLE: {from: [Community, RoutePolicy], to: [BlackholeRoute], description: Community or policy activates discard route.}
+  EXPOSES_BGP_RISK: {from: [BGPRoute, RoutePolicy, RouteReflector, HotPotatoRouting, BlackholeRoute], to: [BGPPathRisk], description: BGP state or design exposes path risk.}
+
+constraints:
+  - {label: BGPProcess, property: id, type: unique}
+  - {label: AutonomousSystem, property: id, type: unique}
+  - {label: BGPNeighbor, property: id, type: unique}
+  - {label: IBGPSession, property: id, type: unique}
+  - {label: EBGPSession, property: id, type: unique}
+  - {label: RouteReflector, property: id, type: unique}
+  - {label: RouteReflectorClient, property: id, type: unique}
+  - {label: RouteReflectorCluster, property: id, type: unique}
+  - {label: Confederation, property: id, type: unique}
+  - {label: BGPUpdate, property: id, type: unique}
+  - {label: NLRI, property: id, type: unique}
+  - {label: BGPRoute, property: id, type: unique}
+  - {label: PathAttribute, property: id, type: unique}
+  - {label: ASPath, property: id, type: unique}
+  - {label: LocalPreference, property: id, type: unique}
+  - {label: MED, property: id, type: unique}
+  - {label: NextHop, property: id, type: unique}
+  - {label: BGPNextHop, property: id, type: unique}
+  - {label: Community, property: id, type: unique}
+  - {label: ExtendedCommunity, property: id, type: unique}
+  - {label: LargeCommunity, property: id, type: unique}
+  - {label: RoutePolicy, property: id, type: unique}
+  - {label: PrefixList, property: id, type: unique}
+  - {label: ASPathList, property: id, type: unique}
+  - {label: CommunityList, property: id, type: unique}
+  - {label: BGPBestPathDecision, property: id, type: unique}
+  - {label: AddPath, property: id, type: unique}
+  - {label: BGPFreeCore, property: id, type: unique}
+  - {label: BGPPIC, property: id, type: unique}
+  - {label: BGPBestExternal, property: id, type: unique}
+  - {label: HotPotatoRouting, property: id, type: unique}
+  - {label: ColdPotatoRouting, property: id, type: unique}
+  - {label: InternetEdge, property: id, type: unique}
+  - {label: PeeringPolicy, property: id, type: unique}
+  - {label: TransitProvider, property: id, type: unique}
+  - {label: CustomerRoute, property: id, type: unique}
+  - {label: BlackholeRoute, property: id, type: unique}
+  - {label: NextHopFailure, property: id, type: unique}
+  - {label: IGPMetricToExit, property: id, type: unique}
+  - {label: PolicyPreference, property: id, type: unique}
+  - {label: EdgeToEdgeReachability, property: id, type: unique}
+  - {label: IGPReachability, property: id, type: unique}
+  - {label: ServiceReachability, property: id, type: unique}
+  - {label: SelectedBGPPath, property: id, type: unique}
+  - {label: BGPPathRisk, property: id, type: unique}
+
+dependency_rules:
+  - id: bgp-process-device
+    source: BGPProcess
+    relationship: RUNS_ON
+    target: [Device]
+    rationale: BGP process resolves to its hosting device.
+  - id: bgp-neighbor-process
+    source: BGPNeighbor
+    relationship: BELONGS_TO
+    target: [BGPProcess]
+    rationale: Neighbor state belongs to a specific process.
+  - id: bgp-route-advertisement
+    source: BGPRoute
+    relationship: ADVERTISED_TO
+    target: [BGPNeighbor]
+    rationale: Advertisement lineage identifies the receiving peer.
+  - id: bgp-best-path
+    source: BGPRoute
+    relationship: SELECTED_BY
+    target: [BGPBestPathDecision]
+    rationale: Selected route records ordered decision rationale.
+  - id: route-policy-filter
+    source: RoutePolicy
+    relationship: FILTERS
+    target: [BGPRoute]
+    rationale: Route visibility traces to filtering policy.
+  - id: prefix-list-prefix
+    source: PrefixList
+    relationship: MATCHES
+    target: [Prefix]
+    rationale: Policy match traces to exact prefix object.
+  - id: community-policy
+    source: Community
+    relationship: INFLUENCES
+    target: [RoutePolicy]
+    rationale: Community semantics influence policy outcome.
+  - id: route-reflector-client
+    source: RouteReflector
+    relationship: REFLECTS
+    target: [BGPRoute]
+    rationale: Reflected route lineage identifies reflector dependency.
+  - id: bgp-pic-next-hop
+    source: BGPPIC
+    relationship: PROTECTS
+    target: [NextHop, NextHopFailure]
+    rationale: PIC precomputes alternate forwarding after edge or next-hop failure.
+  - id: hot-potato-igp
+    source: HotPotatoRouting
+    relationship: DEPENDS_ON
+    target: [IGPMetricToExit]
+    rationale: Nearest-exit behavior follows IGP distance.
+  - id: cold-potato-policy
+    source: ColdPotatoRouting
+    relationship: DEPENDS_ON
+    target: [PolicyPreference]
+    rationale: Distant-exit behavior follows explicit policy preference.
+  - id: bgp-free-core-reachability
+    source: BGPFreeCore
+    relationship: REQUIRES
+    target: [EdgeToEdgeReachability]
+    rationale: Core can omit BGP only when edge next hops remain reachable.
+  - id: bgp-next-hop-recursion
+    source: BGPNextHop
+    relationship: DEPENDS_ON
+    target: [IGPReachability]
+    rationale: BGP route usability requires recursive next-hop resolution.
+  - id: service-selected-path
+    source: ServiceReachability
+    relationship: DEPENDS_ON
+    target: [SelectedBGPPath]
+    rationale: Service reachability traces to selected BGP path.
+
+risk_rules:
+  - id: route-policy-withdrawal
+    applies_to: RoutePolicy
+    when: recent policy change denies a previously advertised critical prefix
+    severity: critical
+    response: Validate diff, restore intended permit, and verify peer advertisement.
+  - id: unreachable-bgp-next-hop
+    applies_to: BGPNextHop
+    when: recursive IGP or underlay reachability is down
+    severity: critical
+    response: Restore IGP reachability before changing BGP policy.
+  - id: route-reflector-single-failure
+    applies_to: RouteReflector
+    when: clients have no alternate reflector for required prefixes
+    severity: high
+    response: Add reflection redundancy and validate client path visibility.
+  - id: unexpected-hot-potato-exit
+    applies_to: HotPotatoRouting
+    when: IGP metric change moves traffic to an unintended exit
+    severity: medium
+    response: Validate IGP cost and policy intent before forcing BGP attributes.
+  - id: community-blackhole-impact
+    applies_to: BlackholeRoute
+    when: blackhole community matches a service prefix unintentionally
+    severity: critical
+    response: Remove blackhole trigger and validate propagation scope.
+
+validation_queries:
+  - id: bgp-route-unreachable-next-hop
+    description: Find BGP routes with failed recursive next-hop reachability.
+    cypher: |
+      MATCH (route:BGPRoute)-[:HAS_NEXT_HOP]->(nextHop:BGPNextHop)
+            -[:DEPENDS_ON]->(igp:IGPReachability)
+      WHERE igp.state = 'down'
+      RETURN route.id, route.name, nextHop.address
+  - id: reflected-route-single-rr
+    description: Find reflected routes with only one reflector.
+    cypher: |
+      MATCH (rr:RouteReflector)-[:REFLECTS]->(route:BGPRoute)
+      WITH route, count(DISTINCT rr) AS reflector_count
+      WHERE reflector_count = 1
+      RETURN route.id, route.name
+  - id: selected-route-without-decision
+    description: Find installed BGP routes without best-path rationale.
+    cypher: |
+      MATCH (route:BGPRoute {state: 'selected'})
+      WHERE NOT (route)-[:SELECTED_BY]->(:BGPBestPathDecision)
+      RETURN route.id, route.name
+
+example_scenarios:
+  - id: policy-prefix-withdrawal
+    summary: Route-policy change removes a critical prefix advertisement.
+  - id: next-hop-recursion-failure
+    summary: BGP route is present but unusable because IGP next hop is unreachable.
+  - id: route-reflector-failure
+    summary: Reflector loss withdraws client prefixes.
+  - id: hot-potato-exit-shift
+    summary: IGP metric change moves traffic to an unexpected internet exit.
+  - id: bgp-pic-protection
+    summary: Precomputed alternate preserves service through edge failure.
+  - id: community-blackhole
+    summary: Blackhole community withdraws service reachability into discard.

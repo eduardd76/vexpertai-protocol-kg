@@ -1,0 +1,227 @@
+ontology:
+  id: chapter-05-eigrp
+  title: EIGRP Design
+  version: 2.0.0
+  description: EIGRP topology decisions, composite metrics, query scope, summarization, unequal-cost forwarding, hub dependencies, and redistribution.
+
+node_labels:
+  EIGRPProcess: EIGRP routing instance.
+  EIGRPASN: EIGRP autonomous-system identifier.
+  EIGRPNamedMode: Named configuration and address-family scope.
+  EIGRPNeighbor: Summarized EIGRP adjacency state.
+  EIGRPInterface: Interface participating in EIGRP.
+  EIGRPTopologyTable: Feasible-distance and route-candidate state.
+  SuccessorRoute: Best loop-free route selected for forwarding.
+  FeasibleSuccessorRoute: Loop-free backup satisfying the feasibility condition.
+  FeasibilityCondition: Reported distance must be lower than successor feasible distance.
+  QueryDomain: Routers that may receive a query for lost reachability.
+  StubRouter: Router limiting routes advertised and queries propagated.
+  SummaryRoute: Aggregate route with an associated discard behavior.
+  SpecificPrefix: More-specific prefix covered by a summary.
+  Variance: Multiplier admitting additional feasible paths.
+  UnequalCostLoadBalancing: Forwarding across feasible paths with different metrics.
+  PassiveInterface: Interface advertising a network without forming neighbors.
+  EIGRPMetric: Composite path metric used for route selection.
+  Delay: Cumulative interface delay metric component.
+  Bandwidth: Minimum path bandwidth metric component.
+  Reliability: Optional reliability metric component.
+  Load: Optional load metric component.
+  MTU: Path MTU metadata carried but not used in classic metric selection.
+  HubAndSpokeTopology: Topology with central reachability dependency.
+  DMVPNDependency: Dependency between DMVPN control/overlay and routed reachability.
+  EIGRPRouter: Router participating in an EIGRP process.
+  HubRouter: Central router required for spoke reachability.
+  HubSpokeReachability: Summarized reachability through a hub.
+  DMVPNOverlay: DMVPN tunnel and NHRP overlay.
+
+properties:
+  EIGRPProcess:
+    autonomous_system: {type: integer, required: true}
+  EIGRPASN:
+    asn: {type: integer, required: true}
+  EIGRPNeighbor:
+    state: {type: string, required: true}
+    peer_address: {type: string, required: true}
+  EIGRPInterface:
+    state: {type: string, required: true}
+  SuccessorRoute:
+    feasible_distance: {type: integer, required: true}
+  FeasibleSuccessorRoute:
+    reported_distance: {type: integer, required: true}
+  Variance:
+    multiplier: {type: integer, required: true}
+  EIGRPMetric:
+    value: {type: integer, required: true}
+  Delay:
+    value: {type: integer, required: true}
+  Bandwidth:
+    value: {type: integer, required: true}
+  Reliability:
+    value: {type: integer, required: true}
+  Load:
+    value: {type: integer, required: true}
+  MTU:
+    value: {type: integer, required: true}
+
+relationship_types:
+  HAS_ASN: {from: [EIGRPProcess], to: [EIGRPASN], description: Process uses autonomous-system identity.}
+  USES_NAMED_MODE: {from: [EIGRPProcess], to: [EIGRPNamedMode], description: Process uses named address-family configuration.}
+  HAS_EIGRP_NEIGHBOR: {from: [EIGRPProcess, EIGRPRouter], to: [EIGRPNeighbor], description: Process or router owns neighbor state.}
+  HAS_TOPOLOGY_TABLE: {from: [EIGRPProcess], to: [EIGRPTopologyTable], description: Process owns topology candidates.}
+  HAS_ROUTE: {from: [EIGRPTopologyTable], to: [SuccessorRoute, FeasibleSuccessorRoute, SummaryRoute], description: Topology table contains candidate or summary route.}
+  LEARNED_BY: {from: [Prefix], to: [EIGRPProcess], description: Prefix is learned through EIGRP process.}
+  SELECTED_BY: {from: [SuccessorRoute, BGPRoute], to: [EIGRPMetric, BGPBestPathDecision], description: Route selection traces to its metric or best-path decision.}
+  SATISFIES_FEASIBILITY: {from: [FeasibleSuccessorRoute], to: [FeasibilityCondition], description: Backup path meets loop-free feasibility test.}
+  REDUCES: {from: [StubRouter], to: [QueryDomain], description: Stub behavior limits query propagation.}
+  HIDES: {from: [SummaryRoute], to: [SpecificPrefix], description: Summary can suppress or blackhole more-specific reachability.}
+  ENABLES: {from: [Variance], to: [UnequalCostLoadBalancing], description: Variance admits feasible unequal-cost paths.}
+  HAS_METRIC_COMPONENT: {from: [EIGRPMetric], to: [Delay, Bandwidth, Reliability, Load, MTU], description: Composite metric references summarized components.}
+  PART_OF_QUERY_DOMAIN: {from: [EIGRPRouter, HubRouter, StubRouter], to: [QueryDomain], description: Router participates in active query scope.}
+  HAS_STUB_ROUTER: {from: [HubAndSpokeTopology], to: [StubRouter], description: Hub-and-spoke topology uses stub spokes.}
+  MAY_DEPEND_ON: {from: [DMVPNOverlay], to: [EIGRPProcess, HubSpokeReachability], description: DMVPN overlay may require EIGRP reachability for tunnels and spokes.}
+  HAS_DMVPN_DEPENDENCY: {from: [HubAndSpokeTopology], to: [DMVPNDependency], description: Topology records DMVPN routing dependency.}
+  EXPOSES_FEEDBACK_RISK: {from: [RedistributionPolicy], to: [Risk], description: Redistribution policy exposes feedback or loop risk.}
+  USES_VARIANCE: {from: [EIGRPProcess], to: [Variance], description: Process applies variance to feasible routes.}
+  HAS_PASSIVE_INTERFACE: {from: [EIGRPProcess], to: [PassiveInterface], description: Process suppresses neighbor formation on interface.}
+
+constraints:
+  - {label: EIGRPProcess, property: id, type: unique}
+  - {label: EIGRPASN, property: id, type: unique}
+  - {label: EIGRPNamedMode, property: id, type: unique}
+  - {label: EIGRPNeighbor, property: id, type: unique}
+  - {label: EIGRPInterface, property: id, type: unique}
+  - {label: EIGRPTopologyTable, property: id, type: unique}
+  - {label: SuccessorRoute, property: id, type: unique}
+  - {label: FeasibleSuccessorRoute, property: id, type: unique}
+  - {label: FeasibilityCondition, property: id, type: unique}
+  - {label: QueryDomain, property: id, type: unique}
+  - {label: StubRouter, property: id, type: unique}
+  - {label: SummaryRoute, property: id, type: unique}
+  - {label: SpecificPrefix, property: id, type: unique}
+  - {label: Variance, property: id, type: unique}
+  - {label: UnequalCostLoadBalancing, property: id, type: unique}
+  - {label: PassiveInterface, property: id, type: unique}
+  - {label: EIGRPMetric, property: id, type: unique}
+  - {label: Delay, property: id, type: unique}
+  - {label: Bandwidth, property: id, type: unique}
+  - {label: Reliability, property: id, type: unique}
+  - {label: Load, property: id, type: unique}
+  - {label: MTU, property: id, type: unique}
+  - {label: RedistributionPolicy, property: id, type: unique}
+  - {label: HubAndSpokeTopology, property: id, type: unique}
+  - {label: DMVPNDependency, property: id, type: unique}
+  - {label: EIGRPRouter, property: id, type: unique}
+  - {label: HubRouter, property: id, type: unique}
+  - {label: HubSpokeReachability, property: id, type: unique}
+  - {label: DMVPNOverlay, property: id, type: unique}
+
+dependency_rules:
+  - id: eigrp-process-device
+    source: EIGRPProcess
+    relationship: RUNS_ON
+    target: [Device, EIGRPRouter]
+    rationale: Process identity resolves to its hosting router.
+  - id: eigrp-neighbor-interface
+    source: EIGRPNeighbor
+    relationship: FORMED_OVER
+    target: [Interface, EIGRPInterface]
+    rationale: Neighbor state traces to the participating interface.
+  - id: eigrp-prefix-process
+    source: Prefix
+    relationship: LEARNED_BY
+    target: [EIGRPProcess]
+    rationale: Prefix lineage identifies its EIGRP process.
+  - id: eigrp-successor-metric
+    source: SuccessorRoute
+    relationship: SELECTED_BY
+    target: [EIGRPMetric]
+    rationale: Forwarding choice traces to its composite metric.
+  - id: eigrp-feasible-successor-protection
+    source: FeasibleSuccessorRoute
+    relationship: PROTECTS
+    target: [Prefix]
+    rationale: Loop-free backup protects prefix convergence.
+  - id: eigrp-stub-query-scope
+    source: StubRouter
+    relationship: REDUCES
+    target: [QueryDomain]
+    rationale: Stub behavior limits active query propagation.
+  - id: eigrp-summary-specific
+    source: SummaryRoute
+    relationship: HIDES
+    target: [SpecificPrefix]
+    rationale: Aggregate discard behavior can hide required more specifics.
+  - id: eigrp-variance-load-balancing
+    source: Variance
+    relationship: ENABLES
+    target: [UnequalCostLoadBalancing]
+    rationale: Unequal-cost forwarding requires explicit variance.
+  - id: eigrp-redistribution-route-map
+    source: RedistributionPolicy
+    relationship: CONTROLLED_BY
+    target: [RouteMap]
+    rationale: EIGRP route movement is governed by explicit policy.
+  - id: eigrp-hub-reachability
+    source: HubSpokeReachability
+    relationship: DEPENDS_ON
+    target: [HubRouter]
+    rationale: Spoke-to-spoke reachability exposes its central hub dependency.
+  - id: dmvpn-eigrp-dependency
+    source: DMVPNOverlay
+    relationship: MAY_DEPEND_ON
+    target: [EIGRPProcess, HubSpokeReachability]
+    rationale: DMVPN tunnels may depend on EIGRP reachability and hub behavior.
+
+risk_rules:
+  - id: no-feasible-successor
+    applies_to: SuccessorRoute
+    when: important prefix has no feasible successor
+    severity: high
+    response: Validate convergence time and query-domain scope after successor loss.
+  - id: summary-blackhole
+    applies_to: SummaryRoute
+    when: discard summary remains while required more-specific route is absent
+    severity: critical
+    response: Correct summary scope or restore the specific route.
+  - id: unbounded-query-domain
+    applies_to: QueryDomain
+    when: hub-and-spoke spokes are not configured as stubs
+    severity: high
+    response: Apply stub policy and validate query propagation.
+  - id: eigrp-bgp-feedback
+    applies_to: RedistributionPolicy
+    when: bidirectional redistribution lacks tagging and origin filtering
+    severity: critical
+    response: Add route tags, deny feedback, and validate rollback.
+
+validation_queries:
+  - id: prefixes-without-feasible-successor
+    description: Find learned prefixes with no feasible successor protection.
+    cypher: |
+      MATCH (prefix:Prefix)-[:LEARNED_BY]->(:EIGRPProcess)
+      WHERE NOT (:FeasibleSuccessorRoute)-[:PROTECTS]->(prefix)
+      RETURN prefix.id, prefix.cidr
+  - id: summary-hidden-required-prefix
+    description: Find summaries hiding a required missing more-specific.
+    cypher: |
+      MATCH (summary:SummaryRoute)-[:HIDES]->(prefix:SpecificPrefix)
+      WHERE prefix.required = true AND prefix.visibility = 'missing'
+      RETURN summary.id, prefix.cidr
+  - id: redistribution-feedback-risk
+    description: Find redistribution policies exposing an unmitigated feedback risk.
+    cypher: |
+      MATCH (policy:RedistributionPolicy)-[:EXPOSES_FEEDBACK_RISK]->(risk:Risk)
+      WHERE NOT (risk)-[:MITIGATED_BY]->()
+      RETURN policy.id, risk.name
+
+example_scenarios:
+  - id: missing-feasible-successor
+    summary: Prefix convergence requires a query because no feasible successor exists.
+  - id: stub-query-containment
+    summary: Stub spokes reduce query propagation in a hub-and-spoke topology.
+  - id: bad-summary
+    summary: Summary discard route blackholes a missing more-specific prefix.
+  - id: variance-unequal-cost
+    summary: Variance installs a feasible path with a higher metric.
+  - id: eigrp-bgp-feedback
+    summary: Bidirectional redistribution without tagging exposes route feedback.

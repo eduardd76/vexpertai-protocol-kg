@@ -1,0 +1,256 @@
+ontology:
+  id: chapter-02-design-principles
+  title: Network Design Tools and Best Practices
+  version: 2.0.0
+  description: Requirement traceability, option analysis, risk, migration safety, technology change, monitoring, and organizational network change.
+
+node_labels:
+  DesignRequirement: Requirement directly governing network design.
+  BusinessRequirement: Business outcome or continuity need.
+  TechnicalRequirement: Required technical behavior or capability.
+  Assumption: Belief requiring evidence or validation.
+  MigrationPlan: Ordered transition from current to target state.
+  MigrationStep: Atomic migration action with prerequisites and outcome.
+  RollbackPlan: Tested path back to a known-safe state.
+  HighAvailabilityRequirement: Availability and failure-recovery need.
+  ScalabilityRequirement: Growth and control-plane scale need.
+  ConvergenceRequirement: Maximum acceptable recovery behavior.
+  SecurityRequirement: Required confidentiality, integrity, or policy behavior.
+  OperationalRequirement: Operability, supportability, and simplicity need.
+  MonitoringRequirement: Required observability for a protocol or feature.
+  CostConstraint: Budget or recurring cost boundary.
+  SkillConstraint: Available engineering skill boundary.
+  HardwareConstraint: Platform capability or lifecycle boundary.
+  TechnologyReplacement: Planned removal of an existing technology.
+  TechnologyAddition: Introduction of a new protocol or feature.
+  MergerDesign: Integration design for independently operated networks.
+  DivestmentDesign: Separation design preserving required service continuity.
+  BrownfieldNetwork: Existing network with inherited state and constraints.
+  GreenfieldNetwork: New network without inherited production dependencies.
+  ExistingProtocol: Protocol already carrying production reachability.
+  CoexistencePlan: Controlled period where old and new technologies operate together.
+  RoutingIntegrationPlan: Policy for exchanging reachability between routing domains.
+  Control: Risk-reduction mechanism with an owner and test.
+  BusinessCriticality: Business priority used to rank requirements.
+  ProtocolFeature: Protocol behavior requiring design and monitoring.
+  OperationalComplexity: Summarized burden on people, tooling, and troubleshooting.
+  AvailabilityTarget: Allowed service disruption objective.
+  ConvergenceTarget: Maximum acceptable control-plane recovery interval.
+  OperabilityConstraint: Human or tooling boundary affecting design.
+  CapacityModel: Summarized demand and headroom model.
+
+properties:
+  Requirement:
+    priority: {type: string, required: true}
+    acceptance_criteria: {type: string, required: true}
+  Assumption:
+    status: {type: string, required: true}
+    owner: {type: string, required: true}
+  Risk:
+    severity: {type: string, required: true}
+    likelihood: {type: string, required: true}
+    state: {type: string, required: true}
+  DesignOption:
+    status: {type: string, required: true}
+  DesignDecision:
+    rationale: {type: string, required: true}
+    status: {type: string, required: true}
+  MigrationStep:
+    sequence: {type: integer, required: true}
+    status: {type: string, required: true}
+  RollbackPlan:
+    tested: {type: boolean, required: true}
+  MonitoringRequirement:
+    signal: {type: string, required: true}
+  BusinessCriticality:
+    rank: {type: integer, required: true}
+  OperationalComplexity:
+    score: {type: integer, required: true}
+  AvailabilityTarget:
+    objective: {type: string, required: true}
+  CapacityModel:
+    headroom_percent: {type: integer, required: true}
+
+relationship_types:
+  DERIVED_FROM: {from: [DesignObjective, DesignConstraint, DesignRequirement], to: [Requirement, BusinessRequirement, TechnicalRequirement], description: Design statement traces to a stakeholder need.}
+  BALANCES: {from: [DesignDecision, DesignOption], to: [AvailabilityTarget, ConvergenceTarget, OperabilityConstraint, CapacityModel, ScalabilityRequirement, OperationalRequirement], description: Decision or option reconciles competing outcomes.}
+  SATISFIES:
+    from: [DesignDecision, DesignOption, ValidationCheck]
+    to: [Requirement, DesignRequirement, BusinessRequirement, TechnicalRequirement, HighAvailabilityRequirement, ScalabilityRequirement, ConvergenceRequirement, SecurityRequirement, OperationalRequirement, MonitoringRequirement, DesignObjective]
+    description: Source fulfills a stated requirement or objective.
+  VIOLATES: {from: [DesignOption], to: [Constraint, CostConstraint, SkillConstraint, HardwareConstraint], description: Option conflicts with a binding constraint.}
+  CHOOSES: {from: [DesignDecision], to: [DesignOption], description: Decision selects the approved option.}
+  CREATES_RISK: {from: [DesignDecision], to: [Risk], description: Decision creates or accepts a modeled risk.}
+  HAS_RISK: {from: [DesignOption, MigrationStep, TechnologyAddition, TechnologyReplacement], to: [Risk], description: Candidate or change exposes a modeled risk.}
+  REQUIRES:
+    from: [TechnologyReplacement, MergerDesign, BGPFreeCore]
+    to: [CoexistencePlan, RoutingIntegrationPlan, EdgeToEdgeReachability]
+    description: Change design cannot proceed safely without the target plan.
+  PRIORITIZED_BY: {from: [Requirement, DesignRequirement, BusinessRequirement, TechnicalRequirement, HighAvailabilityRequirement, ScalabilityRequirement, ConvergenceRequirement, SecurityRequirement, OperationalRequirement, MonitoringRequirement], to: [BusinessCriticality], description: Business impact determines requirement priority.}
+  COVERS: {from: [MonitoringRequirement], to: [ProtocolFeature], description: Monitoring requirement observes feature state and behavior.}
+  HAS_FEATURE: {from: [ExistingProtocol], to: [ProtocolFeature], description: Existing protocol exposes a feature requiring design attention.}
+  INCREASES: {from: [TechnologyAddition, DesignOption], to: [OperationalComplexity], description: Change or option increases operational burden.}
+  BASED_ON_ASSUMPTION: {from: [DesignOption, DesignDecision, MigrationPlan], to: [Assumption], description: Source reasoning depends on assumption.}
+  HAS_STEP: {from: [MigrationPlan], to: [MigrationStep], description: Migration plan contains ordered step.}
+  HAS_ROLLBACK: {from: [MigrationPlan, MigrationStep], to: [RollbackPlan], description: Plan or step has a safe reversal path.}
+  INTEGRATES: {from: [RoutingIntegrationPlan], to: [ExistingProtocol], description: Plan controls reachability exchange with protocol.}
+  REPLACES: {from: [TechnologyReplacement], to: [ExistingProtocol], description: Change retires existing protocol or technology.}
+  ADDS_FEATURE: {from: [TechnologyAddition], to: [ProtocolFeature], description: Addition introduces protocol capability.}
+  APPLIES_TO_NETWORK: {from: [MigrationPlan, TechnologyReplacement, TechnologyAddition, MergerDesign, DivestmentDesign], to: [BrownfieldNetwork, GreenfieldNetwork], description: Design or change applies to network context.}
+
+constraints:
+  - {label: Requirement, property: id, type: unique}
+  - {label: DesignRequirement, property: id, type: unique}
+  - {label: BusinessRequirement, property: id, type: unique}
+  - {label: TechnicalRequirement, property: id, type: unique}
+  - {label: Constraint, property: id, type: unique}
+  - {label: Assumption, property: id, type: unique}
+  - {label: Risk, property: id, type: unique}
+  - {label: Tradeoff, property: id, type: unique}
+  - {label: DesignOption, property: id, type: unique}
+  - {label: DesignDecision, property: id, type: unique}
+  - {label: MigrationPlan, property: id, type: unique}
+  - {label: MigrationStep, property: id, type: unique}
+  - {label: RollbackPlan, property: id, type: unique}
+  - {label: HighAvailabilityRequirement, property: id, type: unique}
+  - {label: ScalabilityRequirement, property: id, type: unique}
+  - {label: ConvergenceRequirement, property: id, type: unique}
+  - {label: SecurityRequirement, property: id, type: unique}
+  - {label: OperationalRequirement, property: id, type: unique}
+  - {label: MonitoringRequirement, property: id, type: unique}
+  - {label: CostConstraint, property: id, type: unique}
+  - {label: SkillConstraint, property: id, type: unique}
+  - {label: HardwareConstraint, property: id, type: unique}
+  - {label: TechnologyReplacement, property: id, type: unique}
+  - {label: TechnologyAddition, property: id, type: unique}
+  - {label: MergerDesign, property: id, type: unique}
+  - {label: DivestmentDesign, property: id, type: unique}
+  - {label: BrownfieldNetwork, property: id, type: unique}
+  - {label: GreenfieldNetwork, property: id, type: unique}
+  - {label: ExistingProtocol, property: id, type: unique}
+  - {label: CoexistencePlan, property: id, type: unique}
+  - {label: RoutingIntegrationPlan, property: id, type: unique}
+  - {label: Control, property: id, type: unique}
+  - {label: BusinessCriticality, property: id, type: unique}
+  - {label: ProtocolFeature, property: id, type: unique}
+  - {label: OperationalComplexity, property: id, type: unique}
+  - {label: AvailabilityTarget, property: id, type: unique}
+  - {label: ConvergenceTarget, property: id, type: unique}
+  - {label: OperabilityConstraint, property: id, type: unique}
+  - {label: CapacityModel, property: id, type: unique}
+
+dependency_rules:
+  - id: option-requirement-traceability
+    source: DesignOption
+    relationship: SATISFIES
+    target: [Requirement, BusinessRequirement, TechnicalRequirement]
+    rationale: Options must show which stated needs they satisfy.
+  - id: option-constraint-conflict
+    source: DesignOption
+    relationship: VIOLATES
+    target: [Constraint, CostConstraint, SkillConstraint, HardwareConstraint]
+    rationale: Constraint conflicts must be visible before selection.
+  - id: decision-option-selection
+    source: DesignDecision
+    relationship: CHOOSES
+    target: [DesignOption]
+    rationale: An approved decision identifies exactly what was selected.
+  - id: decision-risk-acceptance
+    source: DesignDecision
+    relationship: CREATES_RISK
+    target: [Risk]
+    rationale: Accepted risk must trace to the responsible decision.
+  - id: migration-ordering
+    source: MigrationStep
+    relationship: DEPENDS_ON
+    target: [MigrationStep]
+    rationale: Step ordering must expose unsafe or unvalidated prerequisites.
+  - id: technology-addition-protocol-impact
+    source: TechnologyAddition
+    relationship: IMPACTS
+    target: [ExistingProtocol]
+    rationale: New features can change existing protocol behavior and operations.
+  - id: replacement-coexistence
+    source: TechnologyReplacement
+    relationship: REQUIRES
+    target: [CoexistencePlan]
+    rationale: Brownfield replacement requires an explicit coexistence period.
+  - id: merger-routing-integration
+    source: MergerDesign
+    relationship: REQUIRES
+    target: [RoutingIntegrationPlan]
+    rationale: Merger reachability exchange requires explicit policy and ownership.
+  - id: option-tradeoff
+    source: DesignOption
+    relationship: HAS_TRADEOFF
+    target: [Tradeoff]
+    rationale: Benefits and costs must be visible together.
+  - id: risk-control
+    source: Risk
+    relationship: MITIGATED_BY
+    target: [Control]
+    rationale: Material risk needs a named, testable control.
+  - id: requirement-criticality
+    source: Requirement
+    relationship: PRIORITIZED_BY
+    target: [BusinessCriticality]
+    rationale: Requirement priority must trace to business impact.
+  - id: monitoring-feature-coverage
+    source: MonitoringRequirement
+    relationship: COVERS
+    target: [ProtocolFeature]
+    rationale: Added protocol behavior requires explicit observable signals.
+
+risk_rules:
+  - id: selected-option-violates-constraint
+    applies_to: DesignOption
+    when: option is chosen and has a VIOLATES relationship
+    severity: high
+    response: Reject selection or obtain explicit constraint exception.
+  - id: unvalidated-assumption
+    applies_to: Assumption
+    when: status is unvalidated and no VALIDATED_BY relationship exists
+    severity: high
+    response: Validate the assumption or add contingency before approval.
+  - id: unsafe-migration-dependency
+    applies_to: MigrationStep
+    when: prerequisite is not validated or the dependent step has no rollback plan
+    severity: critical
+    response: Block execution until prerequisite and rollback checks pass.
+  - id: unmitigated-design-risk
+    applies_to: Risk
+    when: severity is high or critical and no MITIGATED_BY relationship exists
+    severity: high
+    response: Assign an effective control or formally accept the residual risk.
+
+validation_queries:
+  - id: unvalidated-assumptions
+    description: Find assumptions without a completed validation.
+    cypher: |
+      MATCH (assumption:Assumption)
+      WHERE assumption.status <> 'validated'
+        AND NOT (assumption)-[:VALIDATED_BY]->()
+      RETURN assumption.id, assumption.name, assumption.owner
+  - id: unsafe-migration-steps
+    description: Find steps with an incomplete prerequisite or no rollback.
+    cypher: |
+      MATCH (step:MigrationStep)-[:DEPENDS_ON]->(prerequisite:MigrationStep)
+      WHERE prerequisite.status <> 'validated'
+         OR NOT (step)-[:HAS_ROLLBACK]->(:RollbackPlan)
+      RETURN step.id, prerequisite.id
+  - id: unmitigated-risks
+    description: Find design risks without controls.
+    cypher: |
+      MATCH (risk:Risk)
+      WHERE NOT (risk)-[:MITIGATED_BY]->()
+      RETURN risk.id, risk.name, risk.severity
+
+example_scenarios:
+  - id: merger-routing-options
+    summary: Compare separate routing islands with controlled redistribution during a company merger.
+  - id: protocol-replacement-coexistence
+    summary: Replace an existing IGP through ordered coexistence and rollback-safe migration.
+  - id: scalability-versus-simplicity
+    summary: Compare hierarchical scale with operational skill and complexity constraints.
+  - id: convergence-versus-complexity
+    summary: Add fast failure detection while exposing monitoring and operational burden.
