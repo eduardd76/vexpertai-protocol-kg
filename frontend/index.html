@@ -10,47 +10,111 @@
   <body>
     <header>
       <h1>vExpertAI Network Design Knowledge Graph</h1>
-      <p>Protocol-local, interaction, service, failure, and change views.</p>
+      <p>Explore dependencies or define a scoped KG for your technology stack.</p>
     </header>
     <main>
-      <section class="controls">
-        <label>
-          View
-          <select id="view-type">
-            <option value="protocol">Protocol local</option>
-            <option value="interaction">Cross-protocol interaction</option>
-            <option value="service">Service dependency</option>
-            <option value="failure">Failure propagation</option>
-            <option value="change">Change blast radius</option>
-            <option value="search">Search</option>
-          </select>
-        </label>
-        <label>
-          Primary input
-          <input id="primary-input" value="ospf" />
-        </label>
-        <label id="secondary-field" class="hidden">
-          Target protocol
-          <input id="secondary-input" value="bgp" />
-        </label>
-        <button id="load-view">Load graph</button>
+      <nav class="tabs" aria-label="Knowledge graph workspaces">
+        <button class="tab active" data-panel="explorer-panel">Explore graph</button>
+        <button class="tab" data-panel="builder-panel">Build custom KG</button>
+      </nav>
+
+      <section id="explorer-panel" class="panel">
+        <section class="controls">
+          <label>
+            View
+            <select id="view-type">
+              <option value="protocol">Protocol local</option>
+              <option value="interaction">Cross-protocol interaction</option>
+              <option value="service">Service dependency</option>
+              <option value="failure">Failure propagation</option>
+              <option value="change">Change blast radius</option>
+              <option value="search">Search</option>
+            </select>
+          </label>
+          <label>
+            Primary input
+            <input id="primary-input" value="ospf" />
+          </label>
+          <label id="secondary-field" class="hidden">
+            Target protocol
+            <input id="secondary-input" value="bgp" />
+          </label>
+          <button id="load-view">Load graph</button>
+        </section>
+        <section class="workspace">
+          <div id="graph" aria-label="Knowledge graph visualization"></div>
+          <aside>
+            <section>
+              <h2>Selected node</h2>
+              <pre id="node-properties">Select a node.</pre>
+            </section>
+            <section>
+              <h2>Summary</h2>
+              <p id="summary">Load a graph view.</p>
+            </section>
+            <section>
+              <h2>Recommendations</h2>
+              <div id="recommendations">None.</div>
+            </section>
+          </aside>
+        </section>
       </section>
-      <section class="workspace">
-        <div id="graph" aria-label="Knowledge graph visualization"></div>
-        <aside>
-          <section>
-            <h2>Selected node</h2>
-            <pre id="node-properties">Select a node.</pre>
-          </section>
-          <section>
-            <h2>Summary</h2>
-            <p id="summary">Load a graph view.</p>
-          </section>
-          <section>
-            <h2>Recommendations</h2>
-            <div id="recommendations">None.</div>
-          </section>
-        </aside>
+
+      <section id="builder-panel" class="panel hidden">
+        <section class="builder-form">
+          <div>
+            <h2>Technology profile</h2>
+            <p class="muted">
+              Select what the environment actually runs. Modules remain attached
+              to the shared core and applicable protocol boundaries are added automatically.
+            </p>
+          </div>
+          <label>
+            Profile name
+            <input id="profile-name" value="Branch and Data Center" maxlength="80" />
+          </label>
+          <label>
+            Sites
+            <input id="profile-sites" value="Branch-01, DC-01" />
+          </label>
+          <label class="wide">
+            Notes
+            <textarea id="profile-notes" maxlength="500">Initial network technology scope.</textarea>
+          </label>
+          <fieldset class="wide">
+            <legend>Deployed technologies</legend>
+            <div id="technology-options" class="technology-grid">Loading catalog…</div>
+          </fieldset>
+          <div class="builder-actions wide">
+            <button id="preview-profile" type="button">Preview KG</button>
+            <button id="save-profile" type="button" class="secondary">Save to Neo4j</button>
+            <label>
+              Saved profiles
+              <select id="saved-profiles">
+                <option value="">Select a profile</option>
+              </select>
+            </label>
+            <button id="load-profile" type="button" class="secondary">Load saved</button>
+          </div>
+          <p id="builder-status" class="wide muted" role="status"></p>
+        </section>
+        <section class="workspace">
+          <div id="builder-graph" aria-label="Custom knowledge graph preview"></div>
+          <aside>
+            <section>
+              <h2>Selected object</h2>
+              <pre id="builder-node-properties">Select a node.</pre>
+            </section>
+            <section>
+              <h2>Profile summary</h2>
+              <p id="builder-summary">Select technologies and preview the KG.</p>
+            </section>
+            <section>
+              <h2>Dependency warnings</h2>
+              <div id="builder-warnings">None.</div>
+            </section>
+          </aside>
+        </section>
       </section>
     </main>
     <script type="module" src="/src/main.js"></script>

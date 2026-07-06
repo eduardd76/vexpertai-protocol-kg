@@ -10,7 +10,12 @@ const colors = {
   Change: "#eab308",
   Evidence: "#06b6d4",
   Recommendation: "#84cc16",
+  KnowledgeGraphProfile: "#f59e0b",
+  CoreOntology: "#0ea5e9",
+  TechnologyModule: "#8b5cf6",
 };
+
+const activeGraphs = new WeakMap();
 
 function elements(graph) {
   const nodes = graph.nodes.map((node) => ({
@@ -35,6 +40,7 @@ function elements(graph) {
 }
 
 export function renderGraph(container, graph, onSelect) {
+  activeGraphs.get(container)?.destroy();
   const cy = cytoscape({
     container,
     elements: elements(graph),
@@ -83,5 +89,6 @@ export function renderGraph(container, graph, onSelect) {
   });
 
   cy.on("tap", "node", (event) => onSelect(event.target.data()));
+  activeGraphs.set(container, cy);
   return cy;
 }

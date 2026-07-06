@@ -31,8 +31,59 @@ input, select, button {
 }
 input { min-width: 230px; }
 button { cursor: pointer; background: #2563eb; border-color: #2563eb; }
+button.secondary { background: #334155; border-color: #475569; }
 button:disabled { opacity: 0.5; }
 .hidden { display: none; }
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tab { background: #1e293b; border-color: #334155; }
+.tab.active { background: #2563eb; border-color: #2563eb; }
+.muted { color: #94a3b8; }
+.builder-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  background: #1e293b;
+  border-radius: 8px;
+}
+.builder-form h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.builder-form p { margin: 0; }
+.builder-form .wide { grid-column: 1 / -1; }
+textarea {
+  min-height: 72px;
+  resize: vertical;
+  border: 1px solid #475569;
+  border-radius: 5px;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 8px 10px;
+}
+fieldset {
+  margin: 0;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 12px;
+}
+legend { color: #cbd5e1; padding: 0 6px; }
+.technology-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 9px;
+}
+.technology-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #0f172a;
+}
+.technology-option input { min-width: auto; margin-top: 3px; }
+.technology-option strong { color: #f8fafc; font-size: 0.85rem; }
+.technology-option span { color: #94a3b8; font-size: 0.75rem; }
+.builder-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 330px;
@@ -40,7 +91,11 @@ button:disabled { opacity: 0.5; }
   margin-top: 12px;
   min-height: calc(100vh - 180px);
 }
-#graph { min-height: 650px; background: #111827; border-radius: 8px; }
+#graph, #builder-graph {
+  min-height: 650px;
+  background: #111827;
+  border-radius: 8px;
+}
 aside { display: grid; gap: 12px; align-content: start; }
 aside section { padding: 12px; background: #1e293b; border-radius: 8px; }
 aside h2 { margin: 0 0 8px; font-size: 0.95rem; }
@@ -50,5 +105,7 @@ article p { color: #cbd5e1; }
 article .evidence { color: #67e8f9; font-size: 0.78rem; }
 @media (max-width: 900px) {
   .workspace { grid-template-columns: 1fr; }
-  #graph { min-height: 520px; }
+  #graph, #builder-graph { min-height: 520px; }
+  .builder-form { grid-template-columns: 1fr; }
+  .technology-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
 }

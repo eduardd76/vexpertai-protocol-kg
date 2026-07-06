@@ -56,6 +56,8 @@ node_labels:
   Evidence: Summarized fact with a pointer to its source.
   Recommendation: Proposed safe action.
   ValidationRun: Execution of checks before or after a change.
+  KnowledgeGraphProfile: Saved selection of ontology modules for an environment.
+  TechnologyModule: Reusable protocol or policy ontology module enabled by a profile.
   CustomerEdge: Customer router attached to provider VPN.
   ProviderEdge: Provider router holding VRFs and VPN routes.
   RouteTarget: VPN route import or export policy identifier.
@@ -104,6 +106,11 @@ properties:
     status: {type: string, required: true}
   ServiceOwner:
     team: {type: string, required: true}
+  KnowledgeGraphProfile:
+    technologies: {type: list, required: true}
+    sites: {type: list, required: false}
+  TechnologyModule:
+    technology_id: {type: string, required: true}
 
 relationship_types:
   HAS_INTERFACE: {from: [Device], to: [Interface], description: Device owns interface.}
@@ -187,6 +194,7 @@ relationship_types:
     to: [Owner, ServiceOwner]
     description: Accountable team or role owns the semantic object.
   HAS_SLA: {from: [BusinessService], to: [SLA, SLARequirement], description: Service is governed by measurable performance requirement.}
+  USES_TECHNOLOGY: {from: [KnowledgeGraphProfile], to: [TechnologyModule], description: Saved environment profile enables an ontology module in the unified KG.}
   USES_ACCESS_INTERFACE: {from: [UserGroup], to: [Interface], description: User group enters the network through access interface.}
   HAS_SOURCE_PROTOCOL: {from: [RedistributionRule], to: [RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], description: Redistribution rule identifies route source protocol.}
   HAS_TARGET_PROTOCOL: {from: [RedistributionRule], to: [RoutingProtocolInstance, OSPFProcess, ISISProcess, EIGRPProcess, BGPProcess], description: Redistribution rule identifies route target protocol.}
@@ -220,6 +228,8 @@ constraints:
   - {label: ApplicationEndpoint, property: id, type: unique}
   - {label: SLA, property: id, type: unique}
   - {label: Owner, property: id, type: unique}
+  - {label: KnowledgeGraphProfile, property: id, type: unique}
+  - {label: TechnologyModule, property: id, type: unique}
 
 dependency_rules:
   - id: service-dependency-must-be-explicit

@@ -209,6 +209,32 @@ For a first customer walkthrough:
 5. Open CHG-8821 to show the prefix-list, route-map, redistribution, affected
    prefix/service, evidence, recommendation, and validation plan.
 
+### Custom KG builder
+
+Select **Build custom KG** in the web UI to define the technologies used by a
+specific environment. The builder:
+
+- attaches every selected technology module to the shared network core;
+- adds only applicable cross-protocol interaction models;
+- warns when BGP, MPLS, VPN, or Segment Routing lacks a modeled underlay;
+- previews the scoped graph before writing;
+- saves and reopens named profiles in Neo4j.
+
+Saved profiles use `dataset: vexpertai-builder`, so design seed reloads do not
+delete them. A profile is an ontology and dependency blueprint, not discovered
+device inventory. Device, configuration, and operational-state ingestion remain
+separate work.
+
+Builder APIs:
+
+```text
+GET  /kg-builder/catalog
+POST /kg-builder/preview
+POST /kg-builder/profiles
+GET  /kg-builder/profiles
+GET  /views/profile/{profile_id}
+```
+
 The original tabular demonstration remains available with:
 
 ```bash

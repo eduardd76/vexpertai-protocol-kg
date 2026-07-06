@@ -6,13 +6,30 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from .config import PROJECT_ROOT
 from .db import create_driver
 from .graph_queries import GraphQueries
+from .kg_builder import KGBuilder, ProfileInput
+
+
+class KGProfileRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    technologies: list[str] = Field(min_length=1, max_length=20)
+    sites: list[str] = Field(default_factory=list, max_length=50)
+    notes: str = Field(default="", max_length=500)
+
+    def to_profile(self) -> ProfileInput:
+        return ProfileInput(
+            name=self.name,
+            technologies=tuple(self.technologies),
+            sites=tuple(self.sites),
+            notes=self.notes,
+        )
 
 
 @asynccontextmanager
@@ -20,6 +37,7 @@ async def lifespan(app: FastAPI):
     driver = create_driver()
     app.state.driver = driver
     app.state.graph_queries = GraphQueries(driver)
+    app.state.kg_builder = KGBuilder(driver)
     try:
         yield
     finally:
@@ -34,13 +52,17 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 
 def get_graph_queries(request: Request) -> GraphQueries:
     return request.app.state.graph_queries
+
+
+def get_kg_builder(request: Request) -> KGBuilder:
+    return request.app.state.kg_builder
 
 
 @app.get("/health")
@@ -91,6 +113,53 @@ def search(
     queries: GraphQueries = Depends(get_graph_queries),
 ) -> dict[str, Any]:
     return queries.search(q)
+
+
+@app.get("/kg-builder/catalog")
+def builder_catalog(
+    builder: KGBuilder = Depends(get_kg_builder),
+) -> dict[str, Any]:
+    return builder.catalog()
+
+
+@app.post("/kg-builder/preview")
+def preview_profile(
+    request: KGProfileRequest,
+    builder: KGBuilder = Depends(get_kg_builder),
+) -> dict[str, Any]:
+    try:
+        return builder.preview(request.to_profile())
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post("/kg-builder/profiles")
+def save_profile(
+    request: KGProfileRequest,
+    builder: KGBuilder = Depends(get_kg_builder),
+) -> dict[str, Any]:
+    try:
+        return builder.save(request.to_profile())
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.get("/kg-builder/profiles")
+def list_profiles(
+    builder: KGBuilder = Depends(get_kg_builder),
+) -> list[dict[str, Any]]:
+    return builder.list_profiles()
+
+
+@app.get("/views/profile/{profile_id}")
+def profile_view(
+    profile_id: str,
+    builder: KGBuilder = Depends(get_kg_builder),
+) -> dict[str, Any]:
+    graph = builder.get_profile(profile_id)
+    if graph is None:
+        raise HTTPException(status_code=404, detail="Knowledge graph profile not found.")
+    return graph
 
 
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
