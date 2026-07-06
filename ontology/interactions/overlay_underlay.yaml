@@ -7,7 +7,7 @@ node_labels: {}
 properties: {}
 relationship_types:
   OVERLAY_DEPENDS_ON_UNDERLAY: {from: [OverlayService, VXLANOverlay, VPNService, MPLSOverlay, DMVPN, SRPolicy], to: [UnderlayRouting, UnderlayTransport, IGPUnderlay, TransportUnderlay], description: Overlay requires underlay reachability and forwarding.}
-  MPLS_LSP_DEPENDS_ON_IGP_UNDERLAY: {from: [LSP, MPLSLSP, LabelSwitchedPath], to: [IGPUnderlay, UnderlayRouting, TransportUnderlay], description: MPLS LSP requires IGP underlay.}
+  MPLS_LSP_DEPENDS_ON_IGP_UNDERLAY: {from: [LSP, MPLSLSP, LabelSwitchedPath], to: [IGPUnderlay, UnderlayRouting, TransportUnderlay, OSPFProcess, ISISProcess, IGPReachability], description: MPLS LSP requires an explicit IGP process or summarized underlay reachability state.}
 constraints: []
 dependency_rules:
   - {id: overlay-underlay, source: OverlayService, relationship: OVERLAY_DEPENDS_ON_UNDERLAY, target: [UnderlayRouting], rationale: Overlay cannot operate without underlay reachability.}

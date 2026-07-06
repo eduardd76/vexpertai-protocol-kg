@@ -9,11 +9,13 @@ MERGE (distributionRole:Role {id: 'view-role-distribution'})
 SET distributionRole.name = 'Campus Distribution', distributionRole.dataset = 'vexpertai-design-ontology'
 MERGE (edgeRole:Role {id: 'view-role-dc-edge'})
 SET edgeRole.name = 'Data Center Edge', edgeRole.dataset = 'vexpertai-design-ontology'
-MERGE (dist1:Device {id: 'view-device-dist-01'})
+MERGE (dist1:Device:Switch {id: 'view-device-dist-01'})
 SET dist1.name = 'Dist-01', dist1.module = 'fhrp',
+    dist1.layer_role = 'distribution',
     dist1.dataset = 'vexpertai-design-ontology'
-MERGE (dist2:Device {id: 'view-device-dist-02'})
+MERGE (dist2:Device:Switch {id: 'view-device-dist-02'})
 SET dist2.name = 'Dist-02', dist2.module = 'fhrp',
+    dist2.layer_role = 'distribution',
     dist2.dataset = 'vexpertai-design-ontology'
 MERGE (edge:Device {id: 'view-device-dc-edge-01'})
 SET edge.name = 'DC-EDGE-01', edge.module = 'bgp',

@@ -24,28 +24,29 @@ evidence.
 - Docker with Docker Compose
 - Python 3.9 or newer
 
-## Start Neo4j
+## Customer demo quick start
 
 ```bash
 docker compose up -d
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python src/seed_loader.py
+python src/demo.py
+uvicorn src.api:app --reload
 ```
+
+Open <http://localhost:8000> for the visualization. FastAPI serves the static
+frontend, so there is no separate frontend install or start command. The page
+loads Cytoscape.js from `unpkg.com`, which requires browser access to that CDN.
 
 Neo4j Browser is available at <http://localhost:7474>. Sign in with username
 `neo4j` and password `password123`. Bolt listens on
 `bolt://localhost:7687`.
 
-## Install and load
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python src/load_neo4j.py
-```
-
-The loader applies both MVP and generated design-ontology schemas, safely
-replaces only their owned datasets, and loads every chapter plus the global
-scenario. Connection settings can be overridden:
+`seed_loader.py` validates and loads the unified design graph. It safely
+replaces only nodes owned by `dataset: vexpertai-design-ontology`. Connection
+settings can be overridden:
 
 ```bash
 export NEO4J_URI=bolt://localhost:7687
@@ -89,8 +90,8 @@ design-only reload is useful. Run chapter and global query packs with:
 ```bash
 python src/graph_loader.py
 python src/query_runner.py
-python src/demo.py --chapter-1
-python src/demo.py --chapter-2
+python src/demo.py --legacy --chapter-1
+python src/demo.py --legacy --chapter-2
 python src/query_runner.py cypher/queries/chapter_03_ospf_queries.cypher
 python src/query_runner.py cypher/queries/chapter_04_isis_queries.cypher
 python src/query_runner.py cypher/queries/chapter_05_eigrp_queries.cypher
@@ -179,24 +180,13 @@ The repository now runs one unified Neo4j database with:
 - FastAPI graph views in `src/api.py`
 - a static Cytoscape.js frontend in `frontend/`
 
-Install, seed, and start:
-
-```bash
-docker compose up -d
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python src/seed_loader.py
-python src/demo.py
-uvicorn src.api:app --reload
-```
-
-Open <http://localhost:8000>. API examples:
+After completing the quick start, use these API examples:
 
 ```text
 GET /health
 GET /views/protocol/ospf
 GET /views/protocol/bgp
+GET /views/interaction/stp/fhrp
 GET /views/interaction/fhrp/ospf
 GET /views/interaction/ospf/bgp
 GET /views/interaction/bgp/mpls
@@ -206,8 +196,24 @@ GET /views/change/CHG-8821
 GET /search?q=Payment
 ```
 
+For a first customer walkthrough:
+
+1. Open the STP/FHRP interaction to show the VLAN 100 root on Dist-01 and HSRP
+   active role on Dist-02.
+2. Open the OSPF/BGP interaction to show prefix origin, redistribution policy,
+   and BGP next-hop dependence on IGP reachability.
+3. Open the BGP/MPLS interaction to show a present VPN route with a missing
+   label.
+4. Open the Payment-App service view for the bounded end-to-end path and its
+   VRF and application-endpoint branches.
+5. Open CHG-8821 to show the prefix-list, route-map, redistribution, affected
+   prefix/service, evidence, recommendation, and validation plan.
+
 The original tabular demonstration remains available with:
 
 ```bash
 python src/demo.py --legacy
 ```
+
+Use `python src/load_neo4j.py` only when the original 51-node operational MVP
+dataset is also needed alongside the unified design graph.

@@ -47,6 +47,7 @@ aside h2 { margin: 0 0 8px; font-size: 0.95rem; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #bfdbfe; }
 article { border-top: 1px solid #475569; padding-top: 8px; }
 article p { color: #cbd5e1; }
+article .evidence { color: #67e8f9; font-size: 0.78rem; }
 @media (max-width: 900px) {
   .workspace { grid-template-columns: 1fr; }
   #graph { min-height: 520px; }

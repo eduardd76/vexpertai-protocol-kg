@@ -133,3 +133,62 @@ def test_live_seed_integrity(live_driver) -> None:
         "FirewallRule",
         "ApplicationEndpoint",
     } <= service_types
+    assert service["recommendations"]
+    assert all(
+        {"evidence", "evidence_source"} <= set(recommendation)
+        for recommendation in service["recommendations"]
+    )
+
+    architecture_checks = {
+        "payment_support_chain": """
+            MATCH (:VLAN {id: 'view-vlan-100'})-[:SUPPORTS_LAYER]->
+                  (:FHRPGroup)-[:SUPPORTS_LAYER]->
+                  (:OSPFProcess)-[:SUPPORTS_LAYER]->
+                  (:BGPProcess)-[:SUPPORTS_LAYER]->
+                  (:MPLSL3VPN)-[:SUPPORTS_LAYER]->
+                  (:FirewallRule)-[:SUPPORTS_LAYER]->
+                  (:QoSPolicy)-[:SUPPORTS_LAYER]->
+                  (:Application)-[:SUPPORTS_LAYER]->
+                  (:BusinessService {id: 'view-service-payment'})
+            RETURN count(*) AS count
+        """,
+        "payment_vrf_and_endpoint": """
+            MATCH (:Application {id: 'view-application-payment'})
+                  -[:DEPENDS_ON]->(:VRF {id: 'view-vrf-prod'})
+            MATCH (:Application {id: 'view-application-payment'})
+                  -[:DEPENDS_ON]->(:ApplicationEndpoint {id: 'view-endpoint-payment'})
+            RETURN count(*) AS count
+        """,
+        "change_policy_lineage": """
+            MATCH (:Change {external_id: 'CHG-8821'})-[:MODIFIES]->
+                  (:PrefixList)-[:PREFIX_LIST_CONTROLS_PREFIX_VISIBILITY]->
+                  (:Prefix)<-[:BGP_ROUTE_CARRIES_PREFIX]-(:BGPRoute)
+                  <-[:REDISTRIBUTION_PRODUCES_BGP_ROUTE]-(:RedistributionRule)
+                  <-[:ROUTE_MAP_CONTROLS_REDISTRIBUTION]-(:RouteMap)
+            RETURN count(*) AS count
+        """,
+        "stp_fhrp_misalignment": """
+            MATCH (root:STPRootBridge)-[:ROLE_ON]->(root_device:Switch)
+            MATCH (root)-[:STP_ROOT_SHOULD_ALIGN_WITH_FHRP_ACTIVE]->
+                  (group:FHRPGroup)-[:ACTIVE_ON]->(active_device:Device)
+            WHERE root_device <> active_device
+            RETURN count(*) AS count
+        """,
+        "bgp_igp_dependency": """
+            MATCH (:BGPRoute)-[:BGP_ROUTE_DEPENDS_ON_NEXT_HOP_REACHABILITY]->
+                  (:IGPReachability)<-[:PROVIDES_REACHABILITY]-(:OSPFProcess)
+            RETURN count(*) AS count
+        """,
+        "mpls_igp_and_label_dependency": """
+            MATCH (route:VPNv4Route {state: 'present'})
+                  -[:VPN_ROUTE_DEPENDS_ON_MPLS_LABEL]->
+                  (:MPLSLabel {state: 'missing'})
+            MATCH (:MPLSL3VPN)-[:MPLS_SERVICE_DEPENDS_ON_LSP]->
+                  (:MPLSLSP)-[:MPLS_LSP_DEPENDS_ON_IGP_UNDERLAY]->
+                  (:OSPFProcess)
+            RETURN count(*) AS count
+        """,
+    }
+    with live_driver.session() as session:
+        for name, cypher in architecture_checks.items():
+            assert session.run(cypher).single(strict=True)["count"] > 0, name

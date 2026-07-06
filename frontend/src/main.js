@@ -52,9 +52,14 @@ async function refresh() {
       const article = document.createElement("article");
       const name = document.createElement("strong");
       const action = document.createElement("p");
+      const evidence = document.createElement("p");
       name.textContent = item.name;
       action.textContent = item.action || "";
-      article.append(name, action);
+      evidence.className = "evidence";
+      evidence.textContent = item.evidence
+        ? `Evidence: ${item.evidence} (${item.evidence_source || "source unavailable"})`
+        : "Evidence source unavailable.";
+      article.append(name, action, evidence);
       recommendations.append(article);
     }
   } catch (error) {

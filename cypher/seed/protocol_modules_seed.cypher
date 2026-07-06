@@ -19,6 +19,7 @@ MATCH (vlan:VLAN {id: 'view-vlan-100'}),
       (dist2:Device {id: 'view-device-dist-02'})
 MERGE (vlan)-[:MAPPED_TO]->(stp)
 MERGE (stp)-[:ELECTS]->(root)
+MERGE (root)-[:ROLE_ON]->(dist1)
 MERGE (fhrp)-[:PROVIDES]->(gateway)
 MERGE (fhrp)-[:ACTIVE_ON]->(dist2)
 MERGE (fhrp)-[:STANDBY_ON]->(dist1)
@@ -130,12 +131,14 @@ SET underlay.name = 'MPLS IGP Underlay', underlay.state = 'degraded',
     underlay.module = 'mpls', underlay.dataset = 'vexpertai-design-ontology'
 WITH vpn, lsp, label, vpnRoute, rt, underlay
 MATCH (vrf:VRF {id: 'view-vrf-prod'}),
-      (bgpRoute:BGPRoute {id: 'view-bgp-route-payment'})
+      (bgpRoute:BGPRoute {id: 'view-bgp-route-payment'}),
+      (ospf:OSPFProcess {id: 'view-ospf-100'})
 MERGE (vpn)-[:USES]->(vrf)
 MERGE (vrf)-[:IMPORTS]->(rt)
 MERGE (vpnRoute)-[:IMPORTED_BY]->(rt)
 MERGE (vpn)-[:MPLS_SERVICE_DEPENDS_ON_LSP {interaction: 'mpls-vpn'}]->(lsp)
 MERGE (lsp)-[:MPLS_LSP_DEPENDS_ON_IGP_UNDERLAY {interaction: 'overlay-underlay'}]->(underlay)
+MERGE (lsp)-[:MPLS_LSP_DEPENDS_ON_IGP_UNDERLAY {interaction: 'overlay-underlay'}]->(ospf)
 MERGE (vpnRoute)-[:VPN_ROUTE_DEPENDS_ON_MPLS_LABEL {interaction: 'bgp-mpls'}]->(label)
 MERGE (bgpRoute)-[:VPN_ROUTE_DEPENDS_ON_MPLS_LABEL {interaction: 'bgp-mpls'}]->(label);
 

@@ -17,7 +17,9 @@ validation_queries:
     description: Find root and active gateway placement mismatch.
     cypher: |
       MATCH (root:STPRootBridge)-[:STP_ROOT_SHOULD_ALIGN_WITH_FHRP_ACTIVE]->(group:FHRPGroup)
-      WHERE root.device_id <> group.active_device_id
-      RETURN root.id, group.id
+      MATCH (root)-[:ROLE_ON]->(root_device:Switch)
+      MATCH (group)-[:ACTIVE_ON]->(active_device:Device)
+      WHERE root_device <> active_device
+      RETURN root.id, group.id, root_device.id, active_device.id
 example_scenarios:
   - {id: vlan100-root-gateway, summary: VLAN 100 root is Dist-01 while active gateway is Dist-02.}

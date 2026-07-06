@@ -103,7 +103,10 @@ class GraphQueries:
             MATCH (recommendation:Recommendation)-[:BASED_ON]->(evidence)
             WHERE toLower(service.name) = toLower($service_name)
             RETURN DISTINCT recommendation.name AS name,
-                   recommendation.action AS action
+                   recommendation.action AS action,
+                   evidence.name AS evidence,
+                   evidence.summary AS evidence_summary,
+                   evidence.source AS evidence_source
             """,
             {"service_name": service_name},
         )
@@ -164,7 +167,10 @@ class GraphQueries:
             WHERE toLower(change.id) = toLower($change_id)
                OR toLower(coalesce(change.external_id, '')) = toLower($change_id)
             RETURN DISTINCT recommendation.name AS name,
-                   recommendation.action AS action
+                   recommendation.action AS action,
+                   evidence.name AS evidence,
+                   evidence.summary AS evidence_summary,
+                   evidence.source AS evidence_source
             """,
             {"change_id": change_id},
         )

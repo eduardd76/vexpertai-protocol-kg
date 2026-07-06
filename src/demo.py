@@ -89,6 +89,11 @@ def print_graph_view(title: str, graph: dict[str, Any]) -> None:
                 f"[green]{recommendation.get('name')}:[/green] "
                 f"{recommendation.get('action', '')}"
             )
+            if recommendation.get("evidence"):
+                console.print(
+                    f"  [dim]Evidence: {recommendation['evidence']} "
+                    f"({recommendation.get('evidence_source', 'source unavailable')})[/dim]"
+                )
 
 
 def main() -> None:
