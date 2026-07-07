@@ -9,7 +9,7 @@
 //   (StubArea)-[:RESTRICTS]->(LSAType)
 //   (ExternalRoute)-[:CARRIED_BY_LSA]->(LSA)
 //
-// Runnable example of the service->prefix->area shape (tagged so reset keeps it):
+// Runnable example (run once — CREATE duplicates on re-paste; tagged so reset keeps it):
 CREATE (svc:BusinessService {name:'Example Service', dataset:'vexpertai-builder'})
 CREATE (p:Prefix {cidr:'198.51.100.0/24', dataset:'vexpertai-builder'})
 CREATE (a:OSPFArea:NormalArea {area_id:'0.0.0.99', name:'Example Area', dataset:'vexpertai-builder'})

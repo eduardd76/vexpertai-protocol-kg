@@ -41,9 +41,10 @@ _REL_RE = re.compile(r"\[[A-Za-z0-9_]*:([A-Za-z0-9_]+)")
 
 
 def _strip_comments(text: str) -> str:
-    return "\n".join(
-        line for line in text.splitlines() if not line.strip().startswith("//")
-    )
+    # Drop everything from the first // on each line (whole-line AND trailing
+    # comments). A // inside a string literal would also be truncated, but the
+    # lab blocks contain no such strings.
+    return "\n".join(line.split("//", 1)[0] for line in text.splitlines())
 
 
 def _labels(text: str) -> set[str]:
@@ -72,11 +73,30 @@ def test_lab_file_uses_only_known_labels_and_rels(filename):
     assert not bad_rels, f"{filename}: unknown relationships {bad_rels}"
 
 
+EXPECTED_STATEMENTS = {
+    "01_first_five_nodes.cypher": 1,
+    "02_blast_radius.cypher": 1,
+    "03_three_questions.cypher": 3,
+    "04_break_it.cypher": 2,
+    "your_network_template.cypher": 1,
+    "starter_shapes.cypher": 1,
+}
+
+
+@pytest.mark.parametrize("filename,expected", list(EXPECTED_STATEMENTS.items()))
+def test_lab_file_statement_count(filename, expected):
+    statements = load_cypher_file(LAB_DIR / filename)
+    assert len(statements) == expected, (
+        f"{filename}: expected {expected} statements, got {len(statements)}"
+    )
+
+
 def _seeded_driver():
     """Return a driver to a seeded DB, or skip if unavailable/unseeded."""
-    try:
-        from src.db import create_driver
+    from src.db import create_driver
 
+    driver = None
+    try:
         driver = create_driver()
         with driver.session() as session:
             count = session.run(
@@ -84,6 +104,8 @@ def _seeded_driver():
                 "RETURN count(a) AS c"
             ).single()["c"]
     except Exception as exc:  # noqa: BLE001 - any connection failure -> skip
+        if driver is not None:
+            driver.close()
         pytest.skip(f"Neo4j not available: {exc}")
     if count == 0:
         driver.close()

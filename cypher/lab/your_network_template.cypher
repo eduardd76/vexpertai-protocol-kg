@@ -1,5 +1,6 @@
 // Beat 5 — YOUR NETWORK. Change only the <REPLACE...> values; keep the shape.
 // Paste, run, then re-run 02_blast_radius.cypher to see YOUR service impacted.
+// Run once: these statements CREATE new nodes, so re-pasting duplicates them.
 CREATE (area:OSPFArea:NormalArea {
     area_id:'<REPLACE: your area id, e.g. 0.0.0.42>',
     name:'<REPLACE: area name, e.g. Campus Area 42>',
