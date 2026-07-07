@@ -138,9 +138,10 @@ That is the whole language, honestly. When you write `(abr:ABR)-[:CONNECTS]->(ar
 
 Until now you ran shapes someone else built. Time to put your own network in.
 
-**Do this first.** Open [`cypher/lab/your_network_template.cypher`](../../cypher/lab/your_network_template.cypher). It is the same shape you already saw — an area, an ABR, a prefix, a service — but with placeholders:
+**Do this first.** Open [`cypher/lab/your_network_template.cypher`](../../cypher/lab/your_network_template.cypher). It is the same shape you already saw — an area, an ABR whose backbone link is down (the same failure), a prefix, a service — but with placeholders:
 
 ```cypher
+MATCH (backbone:OSPFArea {area_id:'0.0.0.0'})
 CREATE (area:OSPFArea:NormalArea {
     area_id:'<REPLACE: your area id, e.g. 0.0.0.42>',
     name:'<REPLACE: area name, e.g. Campus Area 42>',
@@ -155,6 +156,7 @@ CREATE (prefix:Prefix {
 CREATE (service:BusinessService {
     name:'<REPLACE: a service that rides that prefix>',
     criticality:'critical', dataset:'vexpertai-builder'})
+CREATE (abr)-[:CONNECTS {state:'down'}]->(backbone)
 CREATE (abr)-[:CONNECTS {state:'up'}]->(area)
 CREATE (prefix)-[:ORIGINATES_IN]->(area)
 CREATE (prefix)-[:SUPPORTS]->(service);
