@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
+PY := ./.venv/bin/python
 
 .PHONY: help up seed browser demo reset down
 
@@ -10,14 +11,20 @@ help:  ## Show available targets
 up:  ## Start Neo4j and wait until it is healthy
 	$(COMPOSE) up -d
 	@echo "Waiting for Neo4j to be healthy..."
-	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' vexpertai-neo4j 2>/dev/null)" = "healthy" ]; do \
+	@i=0; until [ "$$(docker inspect -f '{{.State.Health.Status}}' vexpertai-neo4j 2>/dev/null)" = "healthy" ]; do \
+		i=$$((i+1)); \
+		if [ $$i -ge 30 ]; then \
+			echo ""; \
+			echo "Neo4j did not become healthy in time. Check: docker compose logs vexpertai-neo4j"; \
+			exit 1; \
+		fi; \
 		sleep 2; printf "."; done; \
 		echo " ready -> http://localhost:7474  (neo4j / password123)"
 
 seed:  ## Create venv, install deps, load the design graph
 	@test -d .venv || python3 -m venv .venv
 	./.venv/bin/pip install -q -r requirements.txt
-	./.venv/bin/python src/seed_loader.py
+	$(PY) src/seed_loader.py
 
 browser:  ## Open the Neo4j Browser
 	@open http://localhost:7474 2>/dev/null || \
@@ -25,10 +32,12 @@ browser:  ## Open the Neo4j Browser
 		echo "Open http://localhost:7474 in your browser"
 
 demo:  ## Print the 8 bounded graph views
-	./.venv/bin/python src/demo.py
+	@test -x ./.venv/bin/python || { echo "Run 'make seed' first."; exit 1; }
+	$(PY) src/demo.py
 
 reset:  ## Reload the design dataset (your vexpertai-builder work is untouched)
-	./.venv/bin/python src/seed_loader.py
+	@test -x ./.venv/bin/python || { echo "Run 'make seed' first."; exit 1; }
+	$(PY) src/seed_loader.py
 
 down:  ## Stop Neo4j (data volume preserved)
 	$(COMPOSE) down
