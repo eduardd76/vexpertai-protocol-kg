@@ -8,7 +8,7 @@ One may ask why a network engineer should sit down and build a knowledge graph a
 
 That is the whole idea of this lab. You already think in nodes and edges every day. Here you just get to choose the nodes. This is a shorter, hands-on companion to the longer walk-through in [`docs/substack_ospf_kg_for_beginners.md`](../substack_ospf_kg_for_beginners.md) — that post explains the *why* in depth; this one is the *do*. You paste, you run, you watch the graph draw itself. Everything runs from the Neo4j Browser and a few `make` targets.
 
-Six beats. Each beat you *do* something first, then you understand what you did. In about an hour you go from an empty database to a graph of a network you actually run.
+A handful of short beats. Each beat you *do* something first, then you understand what you did. In about an hour you go from an empty database to a graph of a network you actually run.
 
 ---
 

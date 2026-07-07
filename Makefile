@@ -2,7 +2,7 @@
 COMPOSE := docker compose
 PY := ./.venv/bin/python
 
-.PHONY: help up seed browser demo reset down
+.PHONY: help up seed browser demo reset down verify-lab
 
 help:  ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -41,3 +41,7 @@ reset:  ## Reload the design dataset (your vexpertai-builder work is untouched)
 
 down:  ## Stop Neo4j (data volume preserved)
 	$(COMPOSE) down
+
+verify-lab:  ## Check the lab Cypher blocks (lint always; live blast-radius if a seeded DB is up)
+	@test -x ./.venv/bin/python || { echo "Run 'make seed' first."; exit 1; }
+	$(PY) -m pytest tests/test_lab_cypher.py -rs -q
