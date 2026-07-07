@@ -123,3 +123,29 @@ def test_blast_radius_returns_order_api():
         driver.close()
     impacted = {svc for row in rows for svc in row.get("impacted_services", [])}
     assert "Order API" in impacted, f"expected Order API in {impacted}"
+
+
+def test_blast_radius_clears_when_backbone_repaired():
+    driver = _seeded_driver()
+    statement = load_cypher_file(LAB_DIR / "02_blast_radius.cypher")[-1]
+    set_state = (
+        "MATCH (abr:ABR {name:'abr-01'})-[c:CONNECTS]->"
+        "(:OSPFArea {area_id:'0.0.0.0'}) SET c.state=$state"
+    )
+
+    def impacted():
+        with driver.session() as session:
+            rows = [record.data() for record in session.run(statement)]
+        return {svc for row in rows for svc in row.get("impacted_services", [])}
+
+    try:
+        with driver.session() as session:
+            session.run(set_state, state="down")
+        assert "Order API" in impacted()          # backbone down -> impact shown
+        with driver.session() as session:
+            session.run(set_state, state="up")
+        assert impacted() == set()                 # backbone repaired -> impact gone
+    finally:
+        with driver.session() as session:
+            session.run(set_state, state="down")   # restore seed default
+        driver.close()

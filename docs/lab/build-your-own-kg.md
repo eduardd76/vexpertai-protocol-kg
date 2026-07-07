@@ -93,18 +93,20 @@ Why clear the sandbox by hand first? Because `make seed` only clears its *own* d
 Now paste [`cypher/lab/02_blast_radius.cypher`](../../cypher/lab/02_blast_radius.cypher) and run it:
 
 ```cypher
-MATCH (abr:ABR)-[:CONNECTS]->(area:OSPFArea)
+MATCH (abr:ABR)-[:CONNECTS {state:'down'}]->(:OSPFArea {area_id:'0.0.0.0'})
+MATCH (abr)-[:CONNECTS]->(area:OSPFArea)
+WHERE area.area_id <> '0.0.0.0'
 MATCH (prefix:Prefix)-[:ORIGINATES_IN]->(area)
 MATCH (prefix)-[:SUPPORTS]->(service:BusinessService)
-RETURN abr.name AS abr, abr.status AS abr_status, area.name AS area,
+RETURN abr.name AS abr, area.name AS area,
        collect(DISTINCT prefix.cidr) AS dependent_prefixes,
        collect(DISTINCT service.name) AS impacted_services
 ORDER BY abr;
 ```
 
-**What you should see, stated plainly.** One row comes back: `abr-01`, status `down`, Area 10, prefix `10.30.10.0/24`, and impacted services **Order API** and Fraud Detection API.
+**What you should see, stated plainly.** One row comes back: `abr-01`, **Application Area 10**, dependent prefixes `10.30.10.0/24` **and** `10.30.77.0/24`, and impacted services **Order API** *and* **Fraud Detection API**.
 
-Stop and look at what just happened. A routing event — one ABR losing its backbone link — produced a *business consequence* in five lines of Cypher. Not a route, not an LSA state, not an interface counter. A named service. The Order API. This is the thing no `show` command tells you. `show ip ospf neighbor` tells you an adjacency dropped. It will never tell you the Order API is now at risk, because the router has no idea the Order API exists. The graph does, because you gave it the one node OSPF never had.
+Stop and look at what just happened. `abr-01`'s backbone link is down, so Application Area 10 is cut off from the backbone — area 0 — and every service whose prefix originates there loses inter-area reachability, not just one of them. A routing event — one ABR losing its backbone link — produced a *business consequence* in a handful of lines of Cypher. Not a route, not an LSA state, not an interface counter. Two named services, both riding on the same severed area. This is the thing no `show` command tells you. `show ip ospf neighbor` tells you an adjacency dropped. It will never tell you the Order API and the Fraud Detection API are now at risk, because the router has no idea either service exists. The graph does, because you gave it the one node OSPF never had.
 
 That connection — from a downed link to a named service — is the whole point. Everything else in this lab is you learning to build it for your own network.
 
@@ -122,7 +124,7 @@ SET c.state = 'up', abr.status = 'up'
 RETURN abr.name AS abr, abr.status AS status, c.state AS backbone_link;
 ```
 
-Run it. Then re-run `02_blast_radius.cypher`. The Order API row is **gone** — the link is up, inter-area reachability is restored, no impacted service. Then run the second statement in `04_break_it.cypher`, which sets the link back to `down`. Re-run `02_blast_radius.cypher` again and the Order API returns. Break it, query, fix it, query. You are watching the impacted set change in real time as you flip one edge property. This is second-order thinking made into something you can poke with a mouse.
+Run it. Then re-run `02_blast_radius.cypher`. The whole impact result is **gone** — an empty result, no rows at all. The link is up, inter-area reachability is restored, so there is nothing left to match. Then run the second statement in `04_break_it.cypher`, which sets the link back to `down`. Re-run `02_blast_radius.cypher` again and the row returns — `abr-01`, Application Area 10, both prefixes, both services, Order API and Fraud Detection API together. Break it, query, fix it, query. You are watching the entire impacted set appear and disappear in real time as you flip one edge property, not just a single row toggling — this is second-order thinking made into something you can poke with a mouse.
 
 **Now understand the one rule that makes all of this work.**
 
@@ -182,7 +184,7 @@ Hand-Cypher is the right way to *learn* the shapes. It is not the right way to m
 uvicorn src.api:app --reload
 ```
 
-Open `http://localhost:8000`, go to the **Build** tab (the `/kg-builder` wizard). Pick your real protocol mix from the catalog, preview the graph it would generate, and save the profile. No hand-Cypher. The wizard writes the shapes for you, snapping together the same ontology you just learned by hand — which is exactly why the hand-work came first. Now you can *read* what the wizard produces, because you built the same thing yourself five minutes ago.
+Open `http://localhost:8000`, go to the **Build custom KG** tab (the `/kg-builder` wizard). Pick your real protocol mix from the catalog, preview the graph it would generate, and save the profile. No hand-Cypher. The wizard writes the shapes for you, snapping together the same ontology you just learned by hand — which is exactly why the hand-work came first. Now you can *read* what the wizard produces, because you built the same thing yourself five minutes ago.
 
 From here the growth ladder is straightforward, one rung at a time:
 
