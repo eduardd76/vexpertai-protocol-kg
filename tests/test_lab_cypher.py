@@ -70,3 +70,34 @@ def test_lab_file_uses_only_known_labels_and_rels(filename):
     bad_rels = _rels(body) - ALLOWED_RELS
     assert not bad_labels, f"{filename}: unknown labels {bad_labels}"
     assert not bad_rels, f"{filename}: unknown relationships {bad_rels}"
+
+
+def _seeded_driver():
+    """Return a driver to a seeded DB, or skip if unavailable/unseeded."""
+    try:
+        from src.db import create_driver
+
+        driver = create_driver()
+        with driver.session() as session:
+            count = session.run(
+                "MATCH (a:OSPFArea {dataset:'vexpertai-design-ontology'}) "
+                "RETURN count(a) AS c"
+            ).single()["c"]
+    except Exception as exc:  # noqa: BLE001 - any connection failure -> skip
+        pytest.skip(f"Neo4j not available: {exc}")
+    if count == 0:
+        driver.close()
+        pytest.skip("design dataset not loaded - run `make seed` first")
+    return driver
+
+
+def test_blast_radius_returns_order_api():
+    driver = _seeded_driver()
+    try:
+        statement = load_cypher_file(LAB_DIR / "02_blast_radius.cypher")[-1]
+        with driver.session() as session:
+            rows = [record.data() for record in session.run(statement)]
+    finally:
+        driver.close()
+    impacted = {svc for row in rows for svc in row.get("impacted_services", [])}
+    assert "Order API" in impacted, f"expected Order API in {impacted}"
